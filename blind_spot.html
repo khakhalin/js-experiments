@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html> 
+	<head> 
+		<script src="../p5/p5.js"></script>
+		<script src="../p5/addons/p5.dom.js"></script>
+		<script src="../p5/addons/p5.sound.js"></script>
+	</head>
+	<body>
+	<div id="container" style="">
+	<div id="left" style="width:200px; display:inline-block; *display: inline; vertical-align: top">
+	</div>
+	<div id="viz5" style="width:700px; display:inline-block; *display: inline; vertical-align: top;">
+	<script type="text/javascript">
+	
+	var my = {
+		csize:700,			// Canvas size
+		objectSize:20,		// Blob size
+		backColor: 255,		// Background color
+		tic: 0,
+		delay: 3,			// how many seconds betwee presentations
+		flagNoticed: 0		// Did the user notice the stimulus
+        }
+	
+	var blobs=[];			// invisible blobs
+	var dot=[]; 		    // positions to be tested
+	var cand;	
+	
+	function setup() {	  
+		myCanvas = createCanvas(my.csize*1.5, my.csize);
+		my.tic = millis();
+		stim = new Blob(random(width),random(height));
+		cand = new Candidates();
+		cand.fill(1000);
+		cand.thin(my.objectSize*2.5);
+		
+		for(var i=0; i<1000; i++){
+			dot.push(new Dot(random(width),random(height)));
+		}
+		
+		var i = 1;
+		var j = 0;
+		while(j<dot.length-2){			
+			if(j==i){j=0; i++};
+			if(sqrt(pow(dot[i].x-dot[j].x,2)+pow(dot[i].y-dot[j].y,2))<10) {
+				dot.splice(j,1);
+				i--;
+				//dot[j].setType(0);
+			}else{
+				j++;
+			}
+		}
+		//blendMode(REPLACE);// or MULTIPLY
+	}
+
+	
+	function draw() {
+		my.c1x = my.csize/2; my.c1y = my.c1x;
+		
+		background(my.backColor);
+		stroke(1);
+		line(my.c1x,my.c1y-10,my.c1x,my.c1y+10);
+		line(my.c1x-10,my.c1y,my.c1x+10,my.c1y);
+		
+		//a = new Blob(random(width),random(height));
+		//a.display();
+		
+		/*if(dot.length<1){
+			for(var i=0; i<10; i++){
+				dot.push(new Dot(random(width),random(height)));
+			}
+		}*/
+		
+		text(cand.dots.length,10,10)
+		stim.display();
+		for(var i=0; i<blobs.length; i++) {
+			blobs[i].display();
+		}
+		cand.display();
+		
+		if(my.flagNoticed){ 			// The key was pressed
+			var temp = cand.pop(); 		// Pick new point to test
+			stim.plop(temp.x,temp.y); 	// Show stimulus there
+			my.flagNoticed = 0;			// Reset everything
+			my.tic = millis();
+		}
+		
+		if(millis() > my.tic + 1000*my.delay){
+			blobs.push(Object.assign({},stim));			// Timeout! Save this blob to the list of successes
+			var temp = cand.pop();						// Pick a new candidate
+			cand.expand(new Dot(stim.x,stim.y),6,my.objectSize);	// Put a few points near the one we just discovered
+			cand.thin(my.objectSize/4*3);
+			cand.shuffle();								// Reshuffle all future points			
+			stim.plop(temp.x,temp.y);
+			my.tic = millis();
+		}
+	}
+	
+	
+	
+	
+	function Candidates(){
+		this.dots = [];
+		this.used = [];
+		this.distance = 100;
+		
+		this.add = function(n){
+			for(var i=0; i<n; i++){
+				var newDots=[];
+				var currentBestJ = 0;
+				var currentLargestDistance = 0;
+				for(var j=0; j<100; j++){ // Create 100 random points
+					newDots.push(new Dot(random(width),random(height)));
+					var dist = width;
+					for(var k=0; k<this.used.length; k++){ // Calculate minimal distance for this point
+						dist = min(dist,newDots[newDots.length-1].distanceTo(this.used[k]));
+					}
+					for(var k=0; k<this.dots.length; k++){ // Calculate minimal distance for this point
+						dist = min(dist,newDots[newDots.length-1].distanceTo(this.dots[k]));
+					}
+					dist = min(dist,newDots[newDots.length-1].x); // Hiding in the corners is not good
+					dist = min(dist,newDots[newDots.length-1].y);
+					if(dist>currentLargestDistance){ // New best option that is further from other dots than its competitors
+						currentLargestDistance = dist;
+						currentBestJ = j;
+					}
+				}
+				this.dots.push(Object.assign({},newDots[currentBestJ]));
+				//this.dots.push(new Dot(random(width),random(height)));
+			}
+		}
+		
+		this.expand = function(dot,n,d){
+			angle = random(2*PI);
+			slice = 2*PI/n;
+			for(var i=0; i<n; i++){
+				x = dot.x + d*cos(angle+slice*i);
+				y = dot.y + d*sin(angle+slice*i);
+				this.dots.push(new Dot(x,y));
+			}
+		}
+		
+		this.shuffle = function(){
+			for(var i=this.dots.length-1; i>0; i--){
+				var j = floor(random(i+1));
+				this.dots.splice(i,0,this.dots[j]);
+				this.dots.splice(j,1);
+			}
+		}
+		
+		this.fill = function(n){
+			for(var i=0; i<n; i++){
+				this.dots.push(new Dot(random(width),random(height)));
+			};
+		}
+		
+		this.thin = function(distance){
+			var i = 1;
+			var j = 0;
+			while(j<this.dots.length-2){			
+				if(j==i){j=0; i++};
+				if(this.dots[i].distanceTo(this.dots[j])<distance) {
+					this.dots.splice(j,1);
+					i--;
+				}else{
+					j++;
+				}
+			}
+			j = 0;
+			while(j<this.dots.length){
+				var flag = 0;
+				for(var i=0; i<this.used.length; i++){
+					if(this.dots[j].distanceTo(this.used[i])<distance) {
+						flag = 1;
+					}
+				}
+				if(flag){
+					this.dots.splice(j,1);
+				}else{
+					j++;
+				}
+			}
+		}
+		
+		this.display = function(){
+			for (var i=0; i<this.dots.length; i++) {
+				cand.dots[i].display();
+			}
+			for (var i=0; i<this.used.length; i++) {
+				cand.used[i].display();
+			}
+		}
+		
+		this.pop = function(){
+			temp = this.dots.pop();
+			temp.type = 0;
+			this.used.push(Object.assign({},temp));
+			if(this.dots.length<1) {
+				this.add(10);
+			}
+			return temp;
+		}
+	}
+	
+	
+	function Dot(x,y){
+		this.x = x;
+		this.y = y;
+		this.type = 1;
+		
+		this.display = function(){
+			push();
+			noStroke();
+			if(this.type==1) {fill(190,190,255);}
+			else			 {fill(255,0,9);}
+			ellipse(this.x,this.y,3,3);
+			pop();
+		}
+		
+		this.setType = function(type){
+			this.type = type;
+		}
+		
+		this.distanceTo = function(dot2){
+			return sqrt(pow(this.x-dot2.x,2)+pow(this.y-dot2.y,2));
+		}
+	}
+	
+	
+	
+	function Blob(x,y) {
+		this.x = x;
+		this.y = y;
+		this.diameter = my.objectSize;
+		this.nColors = 5;
+		this.color = 128;
+		
+		this.plop = function(x,y){
+			this.x = x;
+			this.y = y;
+		}
+
+		this.display = function() {
+			//this.x=this.x+random(2)-1;
+			push();
+			noStroke(); 
+			for(var i=0; i<this.nColors; i++){
+				fill(255-(255-this.color)*((i+1)/this.nColors));
+				ellipse(this.x, this.y, this.diameter*(1-(i/this.nColors)), this.diameter*(1-(i/this.nColors)));
+			}
+			pop();
+		};
+	}
+	
+	function keyPressed() {
+		if(key == " "){
+			my.flagNoticed = 1;
+		}
+		if(keyCode === LEFT_ARROW) {
+			my.angleSpeed = PI/180*2;
+		}
+		else if (keyCode === RIGHT_ARROW) {
+			my.angleSpeed = -PI/180*2;
+		}
+	}
+	
+	function keyReleased() {
+	}
+	
+	function htmlSet(name,s) {
+		document.getElementById(name).innerHTML = s;
+	}	
+	
+    </script>       
+    </div>
+	</div>
+	</body> 
+</html> 
