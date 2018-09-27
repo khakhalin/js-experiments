@@ -34,22 +34,26 @@
 		flagNoticed: 0		// Did the user notice the stimulus
         }
 	
-	var blobs=[];			// invisible blobs
-	var dot=[]; 		    // positions to be tested
+	var blobs=[];			// blobs that happened to be invisible, and so show the blind spot
+	//var dot=[]; 		    // positions to be tested
 	var cand;	
+	
 	
 	function setup() {	  
 		myCanvas = createCanvas(my.csize*1.5, my.csize);
 		my.tic = millis();
 		stim = new Blob(random(width),random(height));
 		cand = new Candidates();
-		cand.fill(1000);
-		cand.thin(my.objectSize*2.5);
-		
-		for(var i=0; i<1000; i++){
-			dot.push(new Dot(random(width),random(height)));
+		restart();
 		}
 		
+		
+	function restart(){
+		cand.fill(1000);
+		cand.thin(my.objectSize*2.5);		
+		/*for(var i=0; i<1000; i++){
+			dot.push(new Dot(random(width),random(height)));					// Place new candidate dots
+			}		
 		var i = 1;
 		var j = 0;
 		while(j<dot.length-2){			
@@ -61,7 +65,7 @@
 			}else{
 				j++;
 			}
-		}
+		}*/
 		//blendMode(REPLACE);// or MULTIPLY
 	}
 
@@ -264,6 +268,7 @@
 		};
 	}
 	
+	
 	function keyPressed() {
 		if(key == " "){
 			my.flagNoticed = 1;
@@ -273,6 +278,9 @@
 		}
 		else if (keyCode === RIGHT_ARROW) {
 			my.angleSpeed = -PI/180*2;
+		}
+		else if (keyCode === ESCAPE) {
+			restart();
 		}
 	}
 	
