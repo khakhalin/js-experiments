@@ -31,6 +31,7 @@
 	
 	var blobs=[];			// blobs that happened to be invisible, and so show the blind spot
 	var cand;				// Points to be tested
+	var stim;				// Stimulus (also type Blob)
 	
 	
 	function setup() {	  
@@ -89,11 +90,11 @@
 			my.tic = millis();							// Start timer
 		}
 		
-		if(millis() > my.tic + 1000*my.delay){
-			blobs.push(Object.assign({},stim));			// Timeout! Save this blob to the list of successes
-			var temp = cand.pop();						// Pick a new candidate (do it before proliferation, to avoid lingering at one point)
+		if(millis() > my.tic + 1000*my.delay){			// Timeout happened, and user didn't press the spacebar! 
+			blobs.push(Object.assign({},stim));			// Save this blob to the list of successes
+			var temp = cand.popFront();					// Pick a new candidate from the front, not back of the stack 
 			cand.expand(new Dot(stim.x,stim.y),6,my.objectSize);	// Put a few points near the one we just discovered (proliferate)
-			cand.thin(my.objectSize/4*3);				// Remove candidates that are too close to each other
+			cand.thin(my.objectSize/2);					// Remove candidates that are too close to each other
 			cand.shuffle();								// Reshuffle all future points			
 			stim.plop(temp.x,temp.y);					// Show a new stimulus
 			my.tic = millis();
@@ -162,7 +163,7 @@
 		this.thin = function(distance){						// Remove dots that are too close to other dots
 			var i = 1;										// assert: i>j
 			var j = 0;
-			while(j<this.dots.length-2){					// Go through all dots
+			while(j<this.dots.length-1){					// Go through all dots that < i (and i can be == length-1)
 				if(j==i){j=0; i++};							// If j reached i, it's time to try next i
 				if(this.dots[i].distanceTo(this.dots[j])<distance) {
 					this.dots.splice(j,1);					// Remove j
@@ -199,6 +200,17 @@
 		
 		this.pop = function(){
 			temp = this.dots.pop();
+			temp.type = 0;
+			this.used.push(Object.assign({},temp));
+			if(this.dots.length<1) {
+				this.add(10);
+			}
+			return temp;
+		}
+		
+		this.popFront = function(){								// Same like pop, but from the front of the queue, not the back
+			temp = this.dots[0];								// Take front element
+			this.dots.splice(0,1);								// Remove it from the array
 			temp.type = 0;
 			this.used.push(Object.assign({},temp));
 			if(this.dots.length<1) {
@@ -301,12 +313,12 @@
     </div>
 	</div>
 	<div id="info" style="visibility:hidden; position: absolute; display: block; z-index: 1; margin: 3% 25%; 
-			width: 30%; background-color: #dedede; padding: 2em; font-family:Arial">
+			width: 40%; background-color: #dedede; padding: 2em; font-family:Arial">
 	<b>Welcome to the Blind Spot Mapper!</b>
 	<p>The tool is currently paused. To unpause it, hit <b>Enter</b>.</p>
 	<p>Put your face about 20 cm away from the screen, with your right eye against the cross in the left part of the screen.
 	(You will probably move your head a bit to the left, compared to how you usually use your computer). Close your left eye.
-	Stare at the cross. Don't let your gase move.</p>
+	Stare at the cross. Don't let your gaze wander, and do not move your head.</p>
 	<p>Then unpause the tool, while staring at the cross intently. Circular gray markers will start appearing at different parts of the screen.
 	If you see the marker, press <b>Spacebar</b>. If you don't see, well, don't press anything. The tool will note that this marker
 	fell inside your blind spot.</p>
