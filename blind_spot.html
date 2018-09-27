@@ -10,14 +10,6 @@
 		<script src="../p5/addons/p5.sound.js"></script>
 	</head>
 	<body>
-	<div id="text">Todo:<br>
-	* Esc to clear all<br>
-	* Enter to pause the process and  show current result<br>
-	* hide current thingies<br>
-	* for enter show - see if it would make sense to change blend for this one moment, then restore it back<br>
-	* make them appear and disappear slowly (ramp color a bit)<br>
-	* add backspace to clear last point?<br>
-	</div>
 	<div id="container" style="">
 	<div id="left" style="width:200px; display:inline-block; *display: inline; vertical-align: top">
 	<!-- if we want to have a menu on the left, but I doubt it in this case -->
@@ -26,88 +18,84 @@
 	<script type="text/javascript">
 	
 	var my = {
-		csize:700,			// Canvas size
+		cwidth:1400,			// Canvas size
 		objectSize:20,		// Blob size
 		backColor: 255,		// Background color
 		tic: 0,
 		delay: 3,			// how many seconds betwee presentations
+		flagPause: 1,		// set to 1 to pause thing, 0 to unpause
+		flagHelp: 1,		// whether help needs to be shown
+		flagFirstRun: 1,	// for the first run only	
 		flagNoticed: 0		// Did the user notice the stimulus
         }
 	
 	var blobs=[];			// blobs that happened to be invisible, and so show the blind spot
-	//var dot=[]; 		    // positions to be tested
-	var cand;	
+	var cand;				// Points to be tested
 	
 	
 	function setup() {	  
-		myCanvas = createCanvas(my.csize*1.5, my.csize);
+		//myCanvas = createCanvas(my.cwidth*1.5, my.cwidth);
+		myCanvas = createCanvas(min(windowWidth,my.cwidth),windowHeight-50);			// Slightly smaller than reported window size to account for weird paddings
 		my.tic = millis();
-		stim = new Blob(random(width),random(height));
+		stim = new Blob(random(width),random(height));						// Create objects
 		cand = new Candidates();
-		restart();
+		restart();															// Reset candidates and blobs
 		}
 		
 		
 	function restart(){
-		cand.fill(1000);
-		cand.thin(my.objectSize*2.5);		
-		/*for(var i=0; i<1000; i++){
-			dot.push(new Dot(random(width),random(height)));					// Place new candidate dots
-			}		
-		var i = 1;
-		var j = 0;
-		while(j<dot.length-2){			
-			if(j==i){j=0; i++};
-			if(sqrt(pow(dot[i].x-dot[j].x,2)+pow(dot[i].y-dot[j].y,2))<10) {
-				dot.splice(j,1);
-				i--;
-				//dot[j].setType(0);
-			}else{
-				j++;
-			}
-		}*/
+		cand.reset();
+		cand.fill(1000);								// Randomly place lots of candidates
+		cand.thin(my.objectSize*2.5);					// Remove candidates that are too close to each other
+		blobs = [];										// Flush marked positions
+		stim.plop();									// Reset stimulus to a new location
 		//blendMode(REPLACE);// or MULTIPLY
 	}
 
 	
 	function draw() {
-		my.c1x = my.csize/2; my.c1y = my.c1x;
-		
 		background(my.backColor);
 		stroke(1);
-		line(my.c1x,my.c1y-10,my.c1x,my.c1y+10);
+		my.c1x = my.cwidth/4; my.c1y = my.c1x;			// Coordinates of the concentration cross
+		line(my.c1x,my.c1y-10,my.c1x,my.c1y+10);		// Cross to concentrate upon
 		line(my.c1x-10,my.c1y,my.c1x+10,my.c1y);
 		
-		//a = new Blob(random(width),random(height));
-		//a.display();
 		
-		/*if(dot.length<1){
-			for(var i=0; i<10; i++){
-				dot.push(new Dot(random(width),random(height)));
-			}
-		}*/
-		
-		text(cand.dots.length,10,10)
-		stim.display();
-		for(var i=0; i<blobs.length; i++) {
-			blobs[i].display();
+		if(my.flagPause){
+			blendMode(MULTIPLY);						// Very slow but weird mode
+			text("Paused. Enter to unpause...",10,10)
+			my.tic = millis();							// Restart timer
+		} else {
+			blendMode(REPLACE);
+			stim.display();									// Show stimulus			
 		}
-		cand.display();
 		
-		if(my.flagNoticed){ 			// The key was pressed
-			var temp = cand.pop(); 		// Pick new point to test
-			stim.plop(temp.x,temp.y); 	// Show stimulus there
-			my.flagNoticed = 0;			// Reset everything
-			my.tic = millis();
+		if(my.flagHelp) {
+			document.getElementById('info').style.visibility = "visible";
+		} else {
+			document.getElementById('info').style.visibility = "hidden";
+		}
+		
+		//text(cand.dots.length,10,10)					// Troubleshooting only (a little text in the top corner; comment later)
+		for(var i=0; i<blobs.length; i++) {
+			blobs[i].display();							// Show all blobs
+		}
+		cand.display();									// Show all candidates (at least for now. Troubleshooting.)
+		
+		if(my.flagNoticed){ 							// The key was pressed
+			var temp = cand.pop(); 						// Pick new point to test
+			stim.plop(temp.x,temp.y); 					// Show stimulus there
+			my.flagNoticed = 0;							// Reset everything
+			my.tic = millis();							// Start timer
 		}
 		
 		if(millis() > my.tic + 1000*my.delay){
 			blobs.push(Object.assign({},stim));			// Timeout! Save this blob to the list of successes
-			var temp = cand.pop();						// Pick a new candidate
-			cand.expand(new Dot(stim.x,stim.y),6,my.objectSize);	// Put a few points near the one we just discovered
-			cand.thin(my.objectSize/4*3);
+			var temp = cand.pop();						// Pick a new candidate (do it before proliferation, to avoid lingering at one point)
+			cand.expand(new Dot(stim.x,stim.y),6,my.objectSize);	// Put a few points near the one we just discovered (proliferate)
+			cand.thin(my.objectSize/4*3);				// Remove candidates that are too close to each other
 			cand.shuffle();								// Reshuffle all future points			
-			stim.plop(temp.x,temp.y);
+			stim.plop(temp.x,temp.y);					// Show a new stimulus
 			my.tic = millis();
 		}
 	}
@@ -116,82 +104,84 @@
 	
 	
 	function Candidates(){
-		this.dots = [];
-		this.used = [];
-		this.distance = 100;
+		this.reset = function() {
+			this.dots = [];
+			this.used = [];
+			this.distance = 100;
+		}
 		
-		this.add = function(n){
+		this.add = function(n){								// Add some dots assuming that there are already some dots in the field
 			for(var i=0; i<n; i++){
 				var newDots=[];
 				var currentBestJ = 0;
 				var currentLargestDistance = 0;
-				for(var j=0; j<100; j++){ // Create 100 random points
+				for(var j=0; j<100; j++){ 					// Create 100 random points
 					newDots.push(new Dot(random(width),random(height)));
 					var dist = width;
-					for(var k=0; k<this.used.length; k++){ // Calculate minimal distance for this point
+					for(var k=0; k<this.used.length; k++){ 	// Calculate minimal distance for this point
 						dist = min(dist,newDots[newDots.length-1].distanceTo(this.used[k]));
 					}
-					for(var k=0; k<this.dots.length; k++){ // Calculate minimal distance for this point
+					for(var k=0; k<this.dots.length; k++){ 	// Calculate minimal distance for this point
 						dist = min(dist,newDots[newDots.length-1].distanceTo(this.dots[k]));
 					}
 					dist = min(dist,newDots[newDots.length-1].x); // Hiding in the corners is not good
 					dist = min(dist,newDots[newDots.length-1].y);
-					if(dist>currentLargestDistance){ // New best option that is further from other dots than its competitors
+					if(dist>currentLargestDistance){ 		// New best option that is further from other dots than its competitors
 						currentLargestDistance = dist;
 						currentBestJ = j;
 					}
 				}
 				this.dots.push(Object.assign({},newDots[currentBestJ]));
-				//this.dots.push(new Dot(random(width),random(height)));
 			}
 		}
 		
-		this.expand = function(dot,n,d){
+		this.expand = function(dot,n,d){					// Proliferate against this dot
 			angle = random(2*PI);
 			slice = 2*PI/n;
 			for(var i=0; i<n; i++){
-				x = dot.x + d*cos(angle+slice*i);
+				x = dot.x + d*cos(angle+slice*i);			// Place them at a rosette around the old dot
 				y = dot.y + d*sin(angle+slice*i);
-				this.dots.push(new Dot(x,y));
+				this.dots.push(new Dot(x,y));				// Push each of them into the stackc
 			}
 		}
 		
-		this.shuffle = function(){
+		this.shuffle = function(){							// Randomize dots
 			for(var i=this.dots.length-1; i>0; i--){
 				var j = floor(random(i+1));
-				this.dots.splice(i,0,this.dots[j]);
-				this.dots.splice(j,1);
+				this.dots.splice(i,0,this.dots[j]);			// At point i, delete 0, add current value of element j
+				this.dots.splice(j,1);						// At point j, remove 1. As j < i, addition of j at point i didn't change its address
 			}
 		}
 		
-		this.fill = function(n){
+		this.fill = function(n){							// Add dots at random (useful for initial filling)
 			for(var i=0; i<n; i++){
 				this.dots.push(new Dot(random(width),random(height)));
 			};
 		}
 		
-		this.thin = function(distance){
-			var i = 1;
+		this.thin = function(distance){						// Remove dots that are too close to other dots
+			var i = 1;										// assert: i>j
 			var j = 0;
-			while(j<this.dots.length-2){			
-				if(j==i){j=0; i++};
+			while(j<this.dots.length-2){					// Go through all dots
+				if(j==i){j=0; i++};							// If j reached i, it's time to try next i
 				if(this.dots[i].distanceTo(this.dots[j])<distance) {
-					this.dots.splice(j,1);
-					i--;
+					this.dots.splice(j,1);					// Remove j
+					i--;									// As i is now pointint at former i+1, adjust
 				}else{
-					j++;
+					j++;									// If no issues, try next j
 				}
 			}
 			j = 0;
-			while(j<this.dots.length){
+			while(j<this.dots.length){						// Compare candidate dots with used dots
 				var flag = 0;
-				for(var i=0; i<this.used.length; i++){
+				for(var i=0; i<this.used.length; i++){		// Run through all used dots
 					if(this.dots[j].distanceTo(this.used[i])<distance) {
 						flag = 1;
+						break;								// No need to continue with this loop
 					}
 				}
 				if(flag){
-					this.dots.splice(j,1);
+					this.dots.splice(j,1);					// If too closed to one of the used ones, ditch it
 				}else{
 					j++;
 				}
@@ -219,25 +209,27 @@
 	}
 	
 	
-	function Dot(x,y){
+	function Dot(x,y){											// This class is used for dots on the field, both future and past
 		this.x = x;
 		this.y = y;
-		this.type = 1;
+		this.type = 1;											// New dots are always future dots
 		
 		this.display = function(){
 			push();
 			noStroke();
-			if(this.type==1) {fill(190,190,255);}
-			else			 {fill(255,0,9);}
+			if(this.type==1) {fill(190,190,255);}				// Prospective (future) dot
+			else{												// Old (abandoned) dot
+				fill(128,128,128);								// Should be dark enough to sit within the "blob"						
+				}
 			ellipse(this.x,this.y,3,3);
 			pop();
 		}
 		
-		this.setType = function(type){
+		this.setType = function(type){							// To switch them to old dots
 			this.type = type;
 		}
 		
-		this.distanceTo = function(dot2){
+		this.distanceTo = function(dot2){						// Distance between two dots
 			return sqrt(pow(this.x-dot2.x,2)+pow(this.y-dot2.y,2));
 		}
 	}
@@ -248,20 +240,26 @@
 		this.x = x;
 		this.y = y;
 		this.diameter = my.objectSize;
-		this.nColors = 5;
+		this.nColors = 7;
 		this.color = 128;
+		this.fadein = 250;
 		
 		this.plop = function(x,y){
 			this.x = x;
 			this.y = y;
+			this.tic = millis();
 		}
 
 		this.display = function() {
 			//this.x=this.x+random(2)-1;
 			push();
-			noStroke(); 
+			noStroke();
+			if(millis()-this.tic<this.fadein)
+				colorCoeff = sin((millis()-this.tic)/this.fadein);
+			else
+				colorCoeff = 1;
 			for(var i=0; i<this.nColors; i++){
-				fill(255-(255-this.color)*((i+1)/this.nColors));
+				fill(255-colorCoeff*(255-this.color)*((i+1)/this.nColors));
 				ellipse(this.x, this.y, this.diameter*(1-(i/this.nColors)), this.diameter*(1-(i/this.nColors)));
 			}
 			pop();
@@ -282,6 +280,14 @@
 		else if (keyCode === ESCAPE) {
 			restart();
 		}
+		else if (keyCode === ENTER){
+			my.flagPause = 1-my.flagPause;
+			my.flagHelp = 0;											// If unpaused, help should always be hidden
+		}
+		else if (key === "H"){
+			my.flagHelp = 1-my.flagHelp;
+			my.flagPause = my.flagHelp;
+		}
 	}
 	
 	function keyReleased() {
@@ -293,6 +299,22 @@
 	
     </script>       
     </div>
+	</div>
+	<div id="info" style="visibility:hidden; position: absolute; display: block; z-index: 1; margin: 3% 25%; 
+			width: 30%; background-color: #dedede; padding: 2em; font-family:Arial">
+	<b>Welcome to the Blind Spot Mapper!</b>
+	<p>The tool is currently paused. To unpause it, hit <b>Enter</b>.</p>
+	<p>Put your face about 20 cm away from the screen, with your right eye against the cross in the left part of the screen.
+	(You will probably move your head a bit to the left, compared to how you usually use your computer). Close your left eye.
+	Stare at the cross. Don't let your gase move.</p>
+	<p>Then unpause the tool, while staring at the cross intently. Circular gray markers will start appearing at different parts of the screen.
+	If you see the marker, press <b>Spacebar</b>. If you don't see, well, don't press anything. The tool will note that this marker
+	fell inside your blind spot.</p>
+	<p>Remember that if nothing seems to be happening for a while, probably that's because we are sampling in your blind spot. Be patient!<p>
+	<p>Once you feel tired, hit Enter to pause the tool, and enjoy the shape of your blind spot!</p>
+	<p>Other commands:<br> <b>Esc</b> - clear everything and start anew;<br> <b>H</b> - this help screen.</p>
+	<p>Enjoy!</p>
+	<p align=right><i>- Arseny Khakhalin</i></p>
 	</div>
 	</body> 
 </html> 
