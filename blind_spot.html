@@ -18,11 +18,11 @@
 	<script type="text/javascript">
 	
 	var my = {
-		cwidth:1400,			// Canvas size
+		cMaxWidth:1400,		// Max canvas width
 		objectSize:20,		// Blob size
 		backColor: 255,		// Background color
-		tic: 0,
-		delay: 3,			// how many seconds betwee presentations
+		tic: 0,				// System one, to store time stamps
+		delayReaction: 2,	// seconds to press the buttom
 		flagPause: 1,		// set to 1 to pause thing, 0 to unpause
 		flagHelp: 1,		// whether help needs to be shown
 		flagFirstRun: 1,	// for the first run only	
@@ -35,10 +35,10 @@
 	
 	
 	function setup() {	  
-		//myCanvas = createCanvas(my.cwidth*1.5, my.cwidth);
-		myCanvas = createCanvas(min(windowWidth,my.cwidth),windowHeight-50);			// Slightly smaller than reported window size to account for weird paddings
+		myCanvas = createCanvas(min(windowWidth,my.cMaxWidth),windowHeight-50);						// Slightly smaller than reported window size to account for weird paddings
+		
 		my.tic = millis();
-		stim = new Blob(random(width),random(height));						// Create objects
+		stim = new Blob(random(width),random(height));		 				// Create objects
 		cand = new Candidates();
 		restart();															// Reset candidates and blobs
 		}
@@ -48,8 +48,7 @@
 		cand.reset();
 		cand.fill(1000);								// Randomly place lots of candidates
 		cand.thin(my.objectSize*2.5);					// Remove candidates that are too close to each other
-		blobs = [];										// Flush marked positions
-		stim.plop();									// Reset stimulus to a new location
+		blobs = [];										// Flush marked positions							// Reset stimulus to a new location
 		//blendMode(REPLACE);// or MULTIPLY
 	}
 
@@ -57,7 +56,7 @@
 	function draw() {
 		background(my.backColor);
 		stroke(1);
-		my.c1x = my.cwidth/4; my.c1y = my.c1x;			// Coordinates of the concentration cross
+		my.c1x = 350; my.c1y = my.c1x;			// Coordinates of the concentration cross
 		line(my.c1x,my.c1y-10,my.c1x,my.c1y+10);		// Cross to concentrate upon
 		line(my.c1x-10,my.c1y,my.c1x+10,my.c1y);
 		
@@ -68,6 +67,7 @@
 			my.tic = millis();							// Restart timer
 		} else {
 			blendMode(REPLACE);
+			//text(stim.x,10,10)
 			stim.display();									// Show stimulus			
 		}
 		
@@ -85,18 +85,23 @@
 		
 		if(my.flagNoticed){ 							// The key was pressed
 			var temp = cand.pop(); 						// Pick new point to test
-			stim.plop(temp.x,temp.y); 					// Show stimulus there
+			stim.plop(temp.x,temp.y,1);					// Show stimulus there
 			my.flagNoticed = 0;							// Reset everything
-			my.tic = millis();							// Start timer
+			my.tic = millis();							// Restart timer
 		}
 		
-		if(millis() > my.tic + 1000*my.delay){			// Timeout happened, and user didn't press the spacebar! 
+		if(millis() > my.tic + 1000*my.delayReaction){	// Timeout happened, and user didn't press the spacebar! 
+			stim.retire();								// Before saving, mark it as "done"
 			blobs.push(Object.assign({},stim));			// Save this blob to the list of successes
-			var temp = cand.popFront();					// Pick a new candidate from the front, not back of the stack 
+			var temp;
+			if(random()<0.5)
+				temp = cand.popFront();					// Pick one of the old points
+			else
+				temp = cand.pop();						// Pick one of the new points. ------------- I'm actually not sure this part works as it should
 			cand.expand(new Dot(stim.x,stim.y),6,my.objectSize);	// Put a few points near the one we just discovered (proliferate)
 			cand.thin(my.objectSize/2);					// Remove candidates that are too close to each other
 			cand.shuffle();								// Reshuffle all future points			
-			stim.plop(temp.x,temp.y);					// Show a new stimulus
+			stim.plop(temp.x,temp.y,1);					// Show a new stimulus
 			my.tic = millis();
 		}
 	}
@@ -231,7 +236,7 @@
 			noStroke();
 			if(this.type==1) {fill(190,190,255);}				// Prospective (future) dot
 			else{												// Old (abandoned) dot
-				fill(128,128,128);								// Should be dark enough to sit within the "blob"						
+				fill(180,180,255);								// Should be dark enough to sit within the "blob"						
 				}
 			ellipse(this.x,this.y,3,3);
 			pop();
@@ -255,26 +260,33 @@
 		this.nColors = 7;
 		this.color = 128;
 		this.fadein = 250;
+		this.type = 1;											// Type 1 are visible during unpause, type 0 are the other way around
 		
-		this.plop = function(x,y){
+		this.plop = function(x,y,type){
 			this.x = x;
 			this.y = y;
+			this.type = type;
 			this.tic = millis();
+		}
+		
+		this.retire = function(){								// For when former stimulus is stored forever in the blob array
+			this.type = 0;										// to hide them from normal mode, but show in pause mode
 		}
 
 		this.display = function() {
-			//this.x=this.x+random(2)-1;
-			push();
-			noStroke();
-			if(millis()-this.tic<this.fadein)
-				colorCoeff = sin((millis()-this.tic)/this.fadein);
-			else
-				colorCoeff = 1;
-			for(var i=0; i<this.nColors; i++){
-				fill(255-colorCoeff*(255-this.color)*((i+1)/this.nColors));
-				ellipse(this.x, this.y, this.diameter*(1-(i/this.nColors)), this.diameter*(1-(i/this.nColors)));
+			if((my.flagPause==1) && (this.type===0) || (my.flagPause===0) && (this.type==1)){	// Show type 1s in normal mode, type 0s in pause mode
+				push();
+				noStroke();
+				if(millis()-this.tic<this.fadein)
+					colorCoeff = sin((millis()-this.tic)/this.fadein);
+				else
+					colorCoeff = 1;
+				for(var i=0; i<this.nColors; i++){
+					fill(255-colorCoeff*(255-this.color)*((i+1)/this.nColors));
+					ellipse(this.x, this.y, this.diameter*(1-(i/this.nColors)), this.diameter*(1-(i/this.nColors)));
+				}
+				pop();
 			}
-			pop();
 		};
 	}
 	
