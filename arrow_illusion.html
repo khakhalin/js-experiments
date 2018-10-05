@@ -4,7 +4,7 @@
 		<title>Map your blind spot</title>
 		<META name="author" content="Arseny Khakhalin">
 		<META name="contact" content="khakhalin@bard.edu">
-		<meta name="description" content="A script to map the shape of your blind spot. The instructions will follow!">
+		<meta name="description" content="Arrow illusion">
 		<script src="../p5/p5.js"></script>
 		<script src="../p5/addons/p5.dom.js"></script>
 		<script src="../p5/addons/p5.sound.js"></script>
@@ -14,7 +14,7 @@
 	<div id="left" style="width:200px; display:inline-block; *display: inline; vertical-align: top">
 	<!-- if we want to have a menu on the left, but I doubt it in this case -->
 	</div>
-	<div id="viz5" style="width:700px; display:inline-block; *display: inline; vertical-align: top;">
+	<div id="viz" style="display:inline-block; *display: inline; vertical-align: top;">
 	<script type="text/javascript">
 	
 	var my = {
@@ -28,6 +28,7 @@
 	
 	function setup() {	  
 		myCanvas = createCanvas(windowWidth-50,windowHeight-50);		// Slightly smaller than reported window
+		myCanvas.parent('viz');
 		my.tic = millis();
 		
 		k = 0;
@@ -51,7 +52,7 @@
 			for(j=0; j<my.nWR; j++){
 				wings[k].x = (i+1)*xStep;
 				wings[k].y = (j+0.5)*yStep;
-				wings[k].l = xStep/2*1.1;
+				wings[k].l = xStep/2*0.9;
 				if(j % 2){						// Even
 					wings[k].z = -smartFormula(wings[k].x,wings[k].y-yStep);
 					if(j>0){
@@ -70,7 +71,7 @@
 	function smartFormula(x,y){
 		s = 1;						// Sign in the formula below
 		if(y<windowHeight/2) s = -1;
-		return mouseX/200*PI + PI*(y/windowHeight*10*mouseY/500 + (x-mouseX)/windowWidth*6*(1+mouseX/1000))+s*(millis()-my.tic)/180;
+		return mouseX/200*PI + PI*(y/windowHeight*10*mouseY/500 + (x-mouseX)/windowWidth*6*(1+mouseX/1000))+s*(millis()-my.tic)/250;
 	}
 	
 	function wing(x,y){
@@ -83,9 +84,9 @@
 		this.draw = function() {
 			push();
 			stroke(1);
-			this.a = sin(this.z);
-			line(this.x,this.y,this.x+cos(this.a)*this.l,this.y+sin(this.a)*this.l);
-			line(this.x,this.y,this.x-cos(this.a)*this.l,this.y+sin(this.a)*this.l);
+			this.a = (sin(this.z)-sin(this.z*3)/9 + sin(this.z*5)/25)*1.5;		// Triangle-ish rather than smooth sin (2 first terms of Fourier sequence for triangle)
+			line(this.x,this.y,this.x+this.l,this.y+sin(this.a)*this.l);
+			line(this.x,this.y,this.x-this.l,this.y+sin(this.a)*this.l);
 			//line(0,0,this.x,this.y+this.l);
 			pop();
 		}
@@ -94,6 +95,8 @@
     </script>       
     </div>
 	</div>
-	
+	<div>Coded by Arseny Khakhalin. Inspired by <a href="https://www.giannisarcone.com/Muller_lyer_illusion.html">this page</a> about Mueller-Lyer illusion,
+	in particular, a version by Gianni A. Sarcone.
+	</div>
 	</body> 
 </html> 
