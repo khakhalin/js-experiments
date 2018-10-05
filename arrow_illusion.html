@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html> 
+	<head> 
+		<title>Map your blind spot</title>
+		<META name="author" content="Arseny Khakhalin">
+		<META name="contact" content="khakhalin@bard.edu">
+		<meta name="description" content="A script to map the shape of your blind spot. The instructions will follow!">
+		<script src="../p5/p5.js"></script>
+		<script src="../p5/addons/p5.dom.js"></script>
+		<script src="../p5/addons/p5.sound.js"></script>
+	</head>
+	<body>
+	<div id="container" style="">
+	<div id="left" style="width:200px; display:inline-block; *display: inline; vertical-align: top">
+	<!-- if we want to have a menu on the left, but I doubt it in this case -->
+	</div>
+	<div id="viz5" style="width:700px; display:inline-block; *display: inline; vertical-align: top;">
+	<script type="text/javascript">
+	
+	var my = {
+		cMaxWidth:1400,		// Max canvas width
+		nWC:40,				// Number of columns of wing
+		nWR:8,				// Number of rows
+		tic:0,				// timestamp
+        }
+	
+	var wings = [];
+	
+	function setup() {	  
+		myCanvas = createCanvas(windowWidth-50,windowHeight-50);		// Slightly smaller than reported window
+		my.tic = millis();
+		
+		k = 0;
+		for(i=0; i<my.nWC; i++) 
+			for(j=0; j<my.nWR; j++){
+				wings[k] = new wing(0,0);
+				k++;
+		}
+	}		
+		
+	function draw() {
+		background(255);
+		stroke(1);
+		
+		xStep = windowWidth/(my.nWC+3);
+		yStep = windowHeight/(my.nWR+0.5);
+		k = 0;
+		for(i=0; i<my.nWC; i++) {
+			stroke([255,0,0])
+			line((i+1)*xStep,yStep*0.5,(i+1)*xStep,windowHeight-yStep);
+			for(j=0; j<my.nWR; j++){
+				wings[k].x = (i+1)*xStep;
+				wings[k].y = (j+0.5)*yStep;
+				wings[k].l = xStep/2*1.1;
+				if(j % 2){						// Even
+					wings[k].z = -smartFormula(wings[k].x,wings[k].y-yStep);
+					if(j>0){
+						stroke([0,0,255]);
+						line(wings[k].x,wings[k].y,wings[k].x,wings[k].y-yStep);
+					}
+				} else {
+					wings[k].z = smartFormula(wings[k].x,wings[k].y);
+				}
+				wings[k].draw();
+				k++;
+			}
+		}
+	}
+	
+	function smartFormula(x,y){
+		s = 1;						// Sign in the formula below
+		if(y<windowHeight/2) s = -1;
+		return mouseX/200*PI + PI*(y/windowHeight*10*mouseY/500 + (x-mouseX)/windowWidth*6*(1+mouseX/1000))+s*(millis()-my.tic)/180;
+	}
+	
+	function wing(x,y){
+		this.x = x;
+		this.y = y;
+		this.z = 0;					// Parameter that regulates angle
+		this.a = 0;
+		this.l = 20;
+	
+		this.draw = function() {
+			push();
+			stroke(1);
+			this.a = sin(this.z);
+			line(this.x,this.y,this.x+cos(this.a)*this.l,this.y+sin(this.a)*this.l);
+			line(this.x,this.y,this.x-cos(this.a)*this.l,this.y+sin(this.a)*this.l);
+			//line(0,0,this.x,this.y+this.l);
+			pop();
+		}
+	}
+	
+    </script>       
+    </div>
+	</div>
+	
+	</body> 
+</html> 
