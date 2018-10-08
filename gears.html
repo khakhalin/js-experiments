@@ -134,6 +134,17 @@
 		}
 	}
 	
+	function mouseClicked() {
+		i = round(mouseX/my.size/2 - 0.5);
+		j = round(mouseY/my.size/2 - 0.5);
+		k = i*my.nRow + j;
+		if (mouseButton === LEFT) {
+			gears[k].v = my.goodSpeed;
+		} else {
+			gears[k].v = -my.goodSpeed;
+		}
+	}
+	
     </script>       
     </div>
 	</div>
