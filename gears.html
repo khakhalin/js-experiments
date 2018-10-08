@@ -19,11 +19,12 @@
 	
 	var my = {
 		cMaxWidth:1400,		// Max canvas width
-		nMax:1000,			// Max number of gears
+		nMax:3000,			// Max number of gears
 		nCol:0,				// Number of columns; unknown for now
 		nRow:0,				// same for rows
 		size: 15,			// size of one gear
 		tic:0,				// timestamp
+		goodSpeed:4,		// good speed to rotate with
         }
 	
 	var gears = [];
@@ -36,6 +37,7 @@
 		for(k=0; k<my.nMax; k++) {										// Pre-create quite a few, just in case
 			gears[k] = new gear();
 		}
+		gears[123].v = my.goodSpeed;
 	}		
 		
 	function draw() {
@@ -49,11 +51,12 @@
 		for(i=0; i<my.nCol; i++) {
 			for(j=0; j<my.nRow; j++) {
 				if(k<my.nMax) {
+					gears[k].id = k;
 					gears[k].i = i;		// Let it know its place
 					gears[k].j = j;
 					gears[k].x = (i+0.5)*2*my.size;
 					gears[k].y = (j+0.5)*2*my.size;
-					if((i===5)&&(j===5)){gears[k].v = 2;}
+					//if((i===10)&&(j===10)){gears[k].v = my.goodSpeed;}
 					if(j>0) {
 						gears[k].check(i,j-1);	// Up
 					}
@@ -68,25 +71,37 @@
 	}
 	
 	function gear(){
+		this.id = 0;
 		this.i = 0;
 		this.j = 0;
 		this.x = 0;
 		this.y = 0;
 		this.endX = 0;
 		this.endY = 0;
-		this.a = random(1)*PI;
-		this.v = 0.1; //(random(1)-0.5)*3;
+		this.a = floor(random(1)*4)*PI/2;
+		this.v = 0; //(random(1)-0.5)*3;
 		this.l = my.size;
 		this.tic = millis();
+		this.immune = 0;			// To prevent sticking
+		
+		minDist = 1;				// Minimal contact distance, px
 		
 		this.check = function(i,j){
 			other = gears[i*my.nRow + j];
-			if(dist(this.endX,this.endY,other.endX,other.endY)<5){
-				this.lightX = other.endX;
-				this.lightY = other.endY;
-				temp = this.v;		// Exchange angular speeds
-				this.v = -other.v;
-				other.v = -temp;
+			if(this.immune==0 || other.immune==0 || this.immune != other.immune){
+				if(dist(this.endX1,this.endY1,other.endX1,other.endY1)<minDist || dist(this.endX1,this.endY1,other.endX2,other.endY2)<minDist ||
+				   dist(this.endX2,this.endY2,other.endX1,other.endY1)<minDist || dist(this.endX2,this.endY2,other.endX2,other.endY2)<minDist){
+					/*this.lightX = other.endX;
+					this.lightY = other.endY;*/
+					temp = this.v;		// Exchange angular speeds
+					this.v = -other.v;
+					other.v = -temp;
+					this.immune = other.id;
+					other.immune = this.id;
+				}
+			} else {
+				this.immune = 0;
+				other.immune = 0;
 			}
 		}
 	
@@ -94,15 +109,25 @@
 			push();
 			stroke(1);
 			this.a = this.a + this.v*(millis()-this.tic)/500;
+			if(this.v ==0 ){				
+				this.a = this.a - round(this.a/(PI*2))*(PI*2);		// Bring to normal a
+				closest_a = round(this.a/(PI/2))*(PI/2);
+				this.a = (this.a*4 + closest_a)/5; 					// Move a bit towards order
+			}
 			this.tic = millis();
-			this.endX = this.x+cos(this.a)*this.l;
-			this.endY = this.y+sin(this.a)*this.l;
-			line(this.x,this.y,this.endX,this.endY);
-			if(this.lightX>0) {
+			c = cos(this.a);
+			s = sin(this.a);
+			this.endX1 = this.x + c*this.l;
+			this.endY1 = this.y + s*this.l;
+			this.endX2 = this.x + s*this.l;
+			this.endY2 = this.y - c*this.l;
+			line(this.x,this.y,this.endX1,this.endY1);
+			line(this.x,this.y,this.endX2,this.endY2);
+			/*if(this.lightX>0) {
 				push;
 				stroke([255,0,0]);
 				line(this.endX,this.endY,this.lightX,this.lightY)
-			}
+			}*/
 			this.lightX = 0;		// inactivate flare
 			this.lightY = 0;
 			pop();
