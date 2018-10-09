@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html> 
+	<head> 
+		<title>Moving dot</title>
+		<META name="author" content="Arseny Khakhalin">
+		<META name="contact" content="khakhalin@bard.edu">
+		<meta name="description" content="Moving dot">
+		<script src="../p5/p5.js"></script>
+		<script src="../p5/addons/p5.dom.js"></script>
+		<script src="../p5/addons/p5.sound.js"></script>
+	</head>
+	<body>
+	<div id="container" style="">
+	<div id="left" style="width:200px; display:inline-block; *display: inline; vertical-align: top">
+	<!-- if we want to have a menu on the left, but I doubt it in this case -->
+	</div>
+	<div id="viz" style="display:inline-block; *display: inline; vertical-align: top;">
+	<script type="text/javascript">
+	
+	var my = {
+		cMaxWidth:1400,		// Max canvas width
+		width:0,			// Canvas width (will be set later)
+		height:0,
+		nDots:300,			// Number of dots
+		tic:0,				// clock
+		speedNoize:0.8,		// random acceleration
+		colorNoise:20,		// speed of color mutation
+		v:2,				// Speed is normalized to this value at all times
+		turnSpeed:0.05,		// How quickly they interact
+		minDist:40,			// Interaction distance
+		flock:0.01,			// V averaging during flocking
+        }
+	
+	var dots = [];
+	
+	function setup() {
+		my.width = windowWidth-50;
+		my.height = windowHeight-50;
+		myCanvas = createCanvas(my.width,my.height);		// Slightly smaller than reported window
+		myCanvas.parent('viz');
+		background(255);
+		my.tic = millis();
+		
+		for(k=0; k<my.nDots; k++) {										// Pre-create quite a few, just in case
+			dots[k] = new dot();
+		}
+	}		
+		
+	function draw() {
+		my.width = windowWidth-50;
+		my.height = windowHeight-50;
+		/*if(millis()-my.tic>2000){
+			background(255);
+			my.tic = millis()
+		}*/
+		//line(0,0,20,20);
+		for(i=0; i<my.nDots; i++){
+			for(j=0; j<i; j++){
+				var d = dist(dots[i].x,dots[i].y,dots[j].x,dots[j].y);
+				if(d<my.minDist){
+					dots[i].interact(dots[j],d);
+				}
+			}
+			dots[i].update();
+			dots[i].draw();
+		}
+	}
+	
+	function dot(){
+		this.x = random(my.width);
+		this.y = random(my.height);
+		this.vx = random(-1,1);
+		this.vy = random(-1,1);
+		this.c = [random(0,255), random(0,255), random(0,255)];
+		
+		this.interact = function(other,d){
+			var s;
+			if(d<my.minDist/2) {s=-1;} else {s=1;} // Repel if close, attract if far
+			var dx = (this.x-other.x)/max(1,pow(d,2))*abs(d-my.minDist)*my.turnSpeed;
+			var dy = (this.y-other.y)/max(1,pow(d,2))*abs(d-my.minDist)*my.turnSpeed;
+			this.vx  = this.vx* (1-my.flock) + other.vx*my.flock-s*dx;
+			this.vy  = this.vy* (1-my.flock) + other.vy*my.flock-s*dy;
+			other.vx = other.vx*(1-my.flock) + this.vx *my.flock+s*dx;
+			other.vy = other.vy*(1-my.flock) + this.vy *my.flock+s*dy;
+			this.c[0]  = this.c[0]  + (other.c[0]-127)*my.flock;
+			this.c[1]  = this.c[1]  + (other.c[1]-127)*my.flock;
+			this.c[2]  = this.c[2]  + (other.c[2]-127)*my.flock;
+			other.c[0] = other.c[0] + (this.c[0]-127)*my.flock;
+			other.c[1] = other.c[1] + (this.c[1]-127)*my.flock;
+			other.c[2] = other.c[2] + (this.c[2]-127)*my.flock;
+		}
+		
+		this.update = function(){
+			this.c[0] = max(0,min(255,this.c[0]+my.colorNoise*random(-1,1)));
+			this.c[1] = max(0,min(255,this.c[1]+my.colorNoise*random(-1,1)));
+			this.c[2] = max(0,min(255,this.c[2]+my.colorNoise*random(-1,1)));
+			this.vx = this.vx+random(-1,1)*my.speedNoize;
+			this.vy = this.vy+random(-1,1)*my.speedNoize;
+			var v = sqrt(pow(this.vx,2) + pow(this.vy,2));
+			this.vx = this.vx/v*my.v;
+			this.vy = this.vy/v*my.v;
+			this.x = this.x + this.vx;
+			this.y = this.y + this.vy;
+			if(this.x<1){
+				this.x = 1;
+				this.vx = -this.vx;
+			}
+			if(this.x>my.width){
+				this.x = my.width;
+				this.vx = -this.vx;
+			}
+			if(this.y<1){
+				this.y = 1;
+				this.vy = -this.vy;
+			}
+			if(this.y>my.height){
+				this.y = my.height;
+				this.vy = -this.vy;
+			}
+		}
+	
+		this.draw = function() {
+			push();
+			//stroke(this.c,125);
+			noStroke();
+			fill(this.c[0],this.c[1],this.c[2],64);
+			//point(this.x,this.y);
+			ellipse(this.x,this.y,2,2);
+			fill(255,255,255,64);
+			ellipse(random(1)*my.width,random(1)*my.height,2,2);
+			pop();
+		}
+	}
+	
+	function mouseClicked() {
+	}
+	
+    </script>       
+    </div>
+	</div>
+	<div>Coded by <a href="https://sites.google.com/view/khakhalin/">Arseny Khakhalin</a>.</div>
+	</body> 
+</html> 
