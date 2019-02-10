@@ -12,7 +12,7 @@
 	<div id="container" style="">
 	<div id="left" style="width:200px; display:inline-block; *display: inline; vertical-align: top">
 		<p>Dish radius, px:<br/>
-		<input type="text" id="my_bigR" value = "160"/></p>
+		<input type="text" id="my_bigR" value = "145"/></p>
 		<p>Background (255 to 0):<br/>
 		<input type="text" id="my_backColor" value = "160"/></p>
 		<p>Dead time, s:<br/>
@@ -34,7 +34,8 @@
 	
 	var my = {
 		/* Here "Dynamic" variables change all the time, "Parameters" are taken from the form, "Constants" are constants */
-		/* Note that if a value is a parameter, you need to actually set it in the form above, not here. It will be overwritten immediately! */
+		/* Note that if a value is a parameter, you need to actually set it in the form above, not here. */
+		/* It will be overwritten immediately, once the program is started! */
 		"period": 1000, 
 		"x": 0,
 		"y": 0,
