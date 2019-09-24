@@ -18,7 +18,7 @@
 		<p>Dead time, s:<br/>
 		<input type="text" id="my_deadTime" value = "30"/></p>
 		<p>Dot Travel Time, ms:<br/>
-		<input type="text" id="my_travelTime" value = "2500"/></p>
+		<input type="text" id="my_travelTime" value = "250"/></p>
 		<p>Dot radius, px:<br/>
 		<input type="text" id="my_size" value = "10"/></p>
 		<p>Make sound? 
@@ -42,7 +42,7 @@
 		"r": 0,
 		"csize": 500,		// Canvas size, px. Constant.
 		"bigR": 200,		// Dish radius, px. Parameter.
-		"status": 0,		// Is == 1 all the time. When ==1, the dot is shown.
+		"status": 0,		// When 1, the dot is shown. When 0, it's hidden.
 		"dot_counter": 0,
 		"secondsPassed": 0,	// For FPS calculations
 		"frameStart": 0,
@@ -52,13 +52,14 @@
 		"angleSpeed": 0,	// Current angle speed (is reset by key presses). Dynamic.
 		"travelTime": 1000,	// Time travel in ms. Parameter.
 		"deadTime": 5,		// How many seconds to wait from dot to dot. Parameter.
-		"flag_sound": 0,	// Flag for whether sound is to be played
-		"freq": 100,		// Oscillator frequency, Hz. Constant.
-		"oscOn": 0,			// Osc is currently on.
-		"oscLegal": 0,		// It is legal to turn Osc on.
+		"flag_sound": 0,	// Flag for whether the program is in "Sounde mode"
+		"oscReady": 0,		// Flag for whether sound could be on (to AND with flag_sound)
+		"oscOn": 0,			// Flag whether Osc is actually currently on
+		"freq": 100,		// Oscillator frequency, Hz. Constant.		
 		"isi": 0,			// Collision-to-sound inter-stimulus interval, ms. Parameter.
 		"soundLength": 10,	// Sound length in ms. Constant.
 		"oscTime": 0,		// Relative time around when the sound should be started (0 is when it is to be started) - dynamic variable
+		"firstRun": 1,		// Flag to catch the first frame ever
 		"backColor": 255	// Background color
 		}
 	
@@ -69,27 +70,49 @@
 		//myCanvas.position(300, 50);
 		stroke(1);
 		fill(0);
-		translate(my.csize/2,my.csize/2); // So that coordinates (0,0) represent the middle of canvas
-		
-		osc = new p5.Oscillator(); 	osc.setType('sawtooth');  osc.start();  osc.freq(my.freq);  osc.amp(0); osc.pan(1); osc.phase(0.25); 
-		osc2 = new p5.Oscillator(); osc2.setType('sawtooth'); osc2.start(); osc2.freq(my.freq); osc2.amp(0); osc2.pan(-1); osc2.phase(0.75); 
+		// osc.amp(0); osc2.amp(0); 
 	}
-
+	
+	function startOscillators(){
+		if (typeof osc !== 'undefined') {
+			delete osc;
+			delete osc2;
+			}
+		osc = new p5.SawOsc(); osc.freq(my.freq); osc.pan(1); osc.phase(0.25); osc.amp(0);
+		osc2 = new p5.SawOsc(); osc2.freq(my.freq); osc2.pan(-1); osc2.phase(0.75); osc2.amp(0);
+		osc.start();
+		osc2.start(); 
+		}
 	
 	function draw() {
 		my.bigR = max(1,floor(document.getElementById('my_bigR').value)); if(isNaN(my.bigR)) my.bigR = 1;
 		my.travelTime = max(1,floor(document.getElementById('my_travelTime').value)); if(isNaN(my.travelTime)) my.travelTime = 1000;	
 		my.deadTime = max(1,floor(document.getElementById('my_deadTime').value)); if(isNaN(my.deadTime)) my.deadTime = 20;	
 		my.size = max(1,floor(document.getElementById('my_size').value)); if(isNaN(my.size)) my.size = 15;
-		if(document.getElementById('my_sound').checked) {my.flag_sound = 1;} else {my.flag_sound = 0;}
+		if(document.getElementById('my_sound').checked) {
+			if(my.flag_sound==0) { // If just turned on..
+				startOscillators(); // use this opportunity to attempt restarting faulty oscillators
+				}
+			my.flag_sound = 1;
+			} 
+		else {
+			my.flag_sound = 0;
+			}
 		my.isi = floor(document.getElementById('my_isi').value); if(isNaN(my.isi)) my.isi = 0;
 		my.backColor = min(255,max(0,floor(document.getElementById('my_backColor').value))); if(isNaN(my.size)) my.size = 15;
 
 		document.getElementById("body").style="background-color:rgb("+my.backColor+","+my.backColor+","+my.backColor+")";
+		
 		background(my.backColor);
+		translate(my.csize/2,my.csize/2); 
 		fill(my.backColor); stroke(1); // For the dish and target
 		ellipse(0,0,my.bigR*2,my.bigR*2);	   
 		fill(0);
+		
+		if(my.firstRun){
+			my.firstRun = 0;
+			startOscillators();
+			}
 
 		if(my.status) { // Display the dot travels
 			tempTime = (millis()-my.start)/my.travelTime; // How far is the dot from the center
@@ -113,51 +136,57 @@
 		htmlSet("div_timer","Seconds passed: " + round((millis()-my.start)/1000));
 		htmlSet("div_counter","Dot # " + my.dot_counter);
 
-		if(my.flag_sound) { // Sound can be played
-			my.oscTime = millis()-my.start-(my.travelTime+my.isi);
-			if(my.oscOn) { // Playing - check if needs to be turned off		
-				if(my.oscTime>=my.soundLength) {
-					osc.amp(0); osc2.amp(0);
-					my.oscOn = 0;
-					my.oscLegal = 0;
-				}
-			}
-		else { // Not playing - check if needs to be turned on
-		if(my.oscLegal) {
+		my.oscTime = millis()-my.start-(my.travelTime+my.isi); // Time since (or to) "collision"
+		if(my.flag_sound && my.oscReady && !my.oscOn) { // The sound haven't played yet
 			if(my.oscTime>=0) {
 				osc.amp(1); osc2.amp(1);
 				my.oscOn = 1;
+				my.oscTime = 0; // Reset time to prevent sounds that are too short
+				my.oscReady = 0; // New sound shouldn't start again until a time reset (new dot)
 				}
 			}
-		}
-	}
+		if(my.oscTime>=my.soundLength) { // Check if needs to be turned off	
+			if(my.oscOn){
+				osc.amp(0); osc2.amp(0);
+				my.oscOn = 0;			
+				}
+			my.oscReady = 0; // If sound was off when the dot was started, still close the opportunity
+			}
 		
-	// FPS counter
-	if(floor(millis()/1000) > my.secondsPassed) {
-		my.secondsPassed++;
-		htmlSet('div_fps',"FPS: " + String(frameCount-my.frameStart));
-		my.frameStart = frameCount;
-	}
-	}
+		// FPS counter
+		if(floor(millis()/1000) > my.secondsPassed) {
+			my.secondsPassed++;
+			htmlSet('div_fps',"FPS: " + String(frameCount-my.frameStart));
+			my.frameStart = frameCount;
+			}
+		}
 	
 	function keyPressed() {
-	  if(key == "Z"){ // Send the dot
-	    my.status = 1;
-	    my.start = millis();
-		my.dot_counter++;
-		my.oscLegal = 1; 	// Sound can now be played (if desired)
-	  }
-	  if(keyCode === LEFT_ARROW) {
-	    my.angleSpeed = PI/180*2;
-	  }
-	  else if (keyCode === RIGHT_ARROW) {
-	    my.angleSpeed = -PI/180*2;
-	  }
-	}
+		if(keyCode == UP_ARROW){ // Send the dot
+			my.status = 1;
+			my.start = millis();
+			my.dot_counter++;
+			my.oscReady = 1; 	// Create new sound opportunity
+			}
+		if(keyCode == DOWN_ARROW){ // Re-center the dot
+			my.status = 0;		// Hide dot	    
+			my.oscReady = 0; 	// Cancel sound opportunity
+			my.r = 0; 			// Radius to 0
+			}
+		if(keyCode == LEFT_ARROW) {
+			my.angleSpeed = PI/180*2;
+			}
+		if(keyCode == RIGHT_ARROW) {
+			my.angleSpeed = -PI/180*2;
+			}
+		if(keyCode == ENTER){
+			startOscillators();
+			}
+		}
 	
 	function keyReleased() {
-	  my.angleSpeed = 0;
-	}
+		my.angleSpeed = 0;
+		}
 	
 	function htmlSet(name,s) {
 		document.getElementById(name).innerHTML = s;

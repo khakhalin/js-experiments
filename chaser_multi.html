@@ -75,11 +75,12 @@
 		myCanvas.parent('viz5');
 		//myCanvas.position(300, 50);
 		stroke(1);
-		fill(0);
-		translate(my.csize/2,my.csize/2);
+		fill(0);		
 		
-		osc = new p5.Oscillator(); 	osc.setType('sawtooth');  osc.start();  osc.freq(my.freq);  osc.amp(0); osc.pan(1); osc.phase(0.25); 
-		osc2 = new p5.Oscillator(); osc2.setType('sawtooth'); osc2.start(); osc2.freq(my.freq); osc2.amp(0); osc2.pan(-1); osc2.phase(0.75); 
+		osc = new p5.Oscillator(); 	osc.setType('sawtooth');  
+		osc.freq(my.freq);  osc.amp(0); osc.pan(1); osc.phase(0.25); osc.start();  
+		osc2 = new p5.Oscillator(); osc2.setType('sawtooth'); 
+		osc2.freq(my.freq); osc2.amp(0); osc2.pan(-1); osc2.phase(0.75); osc2.start(); 
 	}
 
 	
@@ -94,38 +95,39 @@
 		my.sndVol = max(0,min(1,document.getElementById('my_sndVol').value)); if(isNaN(my.sndVol)) my.sndVol = 0.5;
 		my.freq = max(1,document.getElementById('my_freq').value); if(isNaN(my.freq)) my.freq = 100;
 		my.backColor = min(255,max(0,floor(document.getElementById('my_backColor').value))); if(isNaN(my.backColor)) my.backColor = 255;
-	
-	  background(my.backColor);
-	  fill(my.backColor); stroke(1); // For the dish and target
-	  ellipse(0,0,my.bigR*2,my.bigR*2);	   
-	  fill(0);
+
+		background(my.backColor);
+		translate(my.csize/2,my.csize/2);
+		fill(my.backColor); stroke(1); // For the dish and target
+		ellipse(0,0,my.bigR*2,my.bigR*2);	   
+		fill(0);
 	  
-	  if(my.status) { // Display the dot travels
-		tempTime = (millis()-my.start)/my.travelTime; // How far is the dot from the center
-		if(tempTime > 3) {tempTime = 0; fill(my.backColor*0.9);}
-		else if(tempTime > 2) {tempTime = 1-(tempTime-2); fill(my.backColor*0.9);}
-		else if(tempTime > 1) {tempTime = 1; fill(0);}
-		else {fill(0);}
-		if((my.stimMode==0) | (my.stimMode==2)) {
-			my.r = tempTime*(my.bigR-my.size-5);
+		if(my.status) { // Display the dot travels
+			tempTime = (millis()-my.start)/my.travelTime; // How far is the dot from the center
+			if(tempTime > 3) {tempTime = 0; fill(my.backColor*0.9);}
+			else if(tempTime > 2) {tempTime = 1-(tempTime-2); fill(my.backColor*0.9);}
+			else if(tempTime > 1) {tempTime = 1; fill(0);}
+			else {fill(0);}
+			if((my.stimMode==0) | (my.stimMode==2)) {
+				my.r = tempTime*(my.bigR-my.size-5);
 			}
 		else {
 			my.r = 0;
 			}
-	  }
-	  if(millis()-my.start >= my.deadTime*1000) { // Can ungray it now
-		fill(0);
+		}
+		if(millis()-my.start >= my.deadTime*1000) { // Can ungray it now
+			fill(0);
 		}
 	  
-	  my.angle = my.angle+my.angleSpeed;
-	  my.x = my.r*cos(my.angle);
-	  my.y = my.r*sin(my.angle);	  
-	  line(my.bigR*cos(my.angle),my.bigR*sin(my.angle),(my.bigR+20)*cos(my.angle),(my.bigR+20)*sin(my.angle));
-	  
-	  noStroke(); // For the dot	  
-	  ellipse(my.x,my.y,my.size*2,my.size*2);
-	  htmlSet("div_timer","Seconds passed: " + round((millis()-my.start)/1000));
-	  htmlSet("div_counter","Dot # " + my.dot_counter);
+		my.angle = my.angle+my.angleSpeed;
+		my.x = my.r*cos(my.angle);
+		my.y = my.r*sin(my.angle);	  
+		line(my.bigR*cos(my.angle),my.bigR*sin(my.angle),(my.bigR+20)*cos(my.angle),(my.bigR+20)*sin(my.angle));
+
+		noStroke(); // For the dot	  
+		ellipse(my.x,my.y,my.size*2,my.size*2);
+		htmlSet("div_timer","Seconds passed: " + round((millis()-my.start)/1000));
+		htmlSet("div_counter","Dot # " + my.dot_counter);
 	  
 	  if(my.flag_sound & ((my.stimMode==1) | (my.stimMode==2))) { // Sound can be played
 		my.oscTime = millis()-my.start-(my.travelTime+my.isi);
@@ -164,25 +166,30 @@
 	
 	
 	function keyPressed() {
-	  if(key == "Z"){ 		// Send the dot
-	    my.status = 1;		// Switch to travel mode
-	    my.start = millis();
-		my.oscLegal = 1; 	// Sound can now be played (if desired)
-		if(my.flag_alternate) {
-			my.stimMode = my.dot_counter % 3;	// Which stimulus type is it
+		if(keyCode == UP_ARROW){ 		// Send the dot
+			my.status = 1;		// Switch to travel mode
+			my.start = millis();
+			my.oscLegal = 1; 	// Sound can now be played (if desired)
+			if(my.flag_alternate) {
+				my.stimMode = my.dot_counter % 3;	// Which stimulus type is it
+				}
+			else {
+				my.stimMode = 2; // Both
+				}
+			my.dot_counter++;
 			}
-		else {
-			my.stimMode = 2; // Both
+		if(keyCode == DOWN_ARROW){ // Re-center the dot
+			my.status = 0;		// Hide dot	    
+			my.oscLegal = 0; 	// No sound
+			my.r = 0;
 			}
-		my.dot_counter++;
-	  }
-	  if(keyCode === LEFT_ARROW) {
-	    my.angleSpeed = PI/180*2;
-	  }
-	  else if (keyCode === RIGHT_ARROW) {
-	    my.angleSpeed = -PI/180*2;
-	  }
-	}
+		if(keyCode === LEFT_ARROW) {
+			my.angleSpeed = PI/180*2;
+			}
+		else if (keyCode === RIGHT_ARROW) {
+			my.angleSpeed = -PI/180*2;
+			}
+		}
 	
 	
 	function keyReleased() {
