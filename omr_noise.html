@@ -6,11 +6,11 @@
 		<script src="../p5/addons/p5.sound.js"></script>
 		<META name="author" content="Arseny Khakhalin">
 		<META name="contact" content="khakhalin@gmail.com">
-		<meta name="description" content="Test for opto-motor response with grain size of different sizes">
+		<meta name="description" content="Opto-motor response test with grain size of different sizes">
 	</head>
 	<body>
 	<div id="left" style="float:left; width:200">
-		<p>Time to cross the square, ms:<br/>
+		<p>Time to cross, ms:<br/>
 		<input type="text" id="my_period" value = "7000"/></p>
 		<p>Direction right?
 		<input type="checkbox" id="my_right" checked/></p>
@@ -18,21 +18,29 @@
 		<input type="checkbox" id="my_angle"/></p>
 		<p>Grain size, px:<br/>
 		<input type="text" id="my_grain" value="4"/></p>
+		<p>Always run
+		<input type="checkbox" id="always_run" checked/></p>
+		<p>Screens to sweep:<br/>
+		<input type="text" id="sweep_length" value="1"/></p>
+		<p><input type="button" id="start_button" onclick="startSweep()" value="Sweep"></p>
 		<div id="fps"></div>
 	</div>
-	<div id="viz5"><p>&nbsp;</p>
-	<script type="text/javascript">
+	<div id="viz5" style="padding-top:10px; margin-left:200px"><script type="text/javascript">
 
 	var my = {canvas_size: 600,
-			"period": 3000,
+			"period": 3000,		// Time to cross the screen, ms. Parameter
 			"x": 20,
 			"n": 4,
 			"width": 0,
 			"rotated": 0,
 			"angle": 0,
-			"grain": 3,
-			"secondsPassed": 0,
-			"frameStart": 0};
+			"grain": 3,			// grain size
+			"secondsPassed": 0,	// total seconds passed since the beginning of the experiment (for reporting)
+			"frameStart": 0,
+			"sweepStarted": 0,	// tic for when the sweep started
+			"sweepLength": 1,	// how many screens to sweep during a sweep
+			"alwaysRun": 1		// flag, whether should be always running
+			};
 
 	function setup() {
 		myCanvas = createCanvas(my.canvas_size, my.canvas_size);
@@ -41,10 +49,17 @@
 		stroke(0);
 		fill(0);
 	}
+	
+	function startSweep(){
+		my.sweepStarted = millis();
+	}
 
 	function draw() {
-		my.period = max(1,document.getElementById('my_period').value);
-		if(isNaN(my.period)) my.period = 1000;
+		my.period = max(1,document.getElementById('my_period').value); if(isNaN(my.period)) my.period = 1000;
+		my.alwaysRun = document.getElementById('always_run').checked;
+		my.right = document.getElementById('my_right').checked;
+		my.angle = document.getElementById('my_angle').checked;
+		my.sweepLength = max(1,document.getElementById('sweep_length').value); if(isNaN(my.sweepLength)) my.sweepLength = 1;
 
 		if(floor(millis()/1000) > my.secondsPassed) {
 			my.secondsPassed++;
@@ -67,34 +82,32 @@
 			img_fore.updatePixels();
 			}
 
-		background(255,255,255);
-
-		if(document.getElementById('my_angle').checked)	{
-				if(document.getElementById('my_right').checked)
+		if(my.angle)	{
+				if(my.right)
 					my.angle = -PI/3.0;
 				else
 					my.angle = PI/3.0;
 				rotate(my.angle);
 				translate(my.canvas_size/2*(cos(my.angle)+sin(my.angle)-1),my.canvas_size/2*(-sin(my.angle)+cos(my.angle)-1));
 			}
-		if(document.getElementById('my_right').checked)
-			my.x = round(my.canvas_size*(millis()/my.period)) % my.canvas_size;
-		else
-			my.x = my.canvas_size - round(my.canvas_size*(millis()/my.period)) % my.canvas_size;
-
-		image(img_fore,my.x,-200);
-		image(img_fore,my.x - my.canvas_size,-200);
-		if(document.getElementById('my_angle').checked) {
-			image(img_fore,my.x - my.canvas_size*2,-200);
-			image(img_fore,my.x + my.canvas_size,-200);
+			
+		if(my.alwaysRun || millis()-my.sweepStarted < my.sweepLength*my.period){
+			background(255);
+			if(my.right)
+				my.x = round(my.canvas_size*(millis()/my.period)) % my.canvas_size;
+			else
+				my.x = my.canvas_size - round(my.canvas_size*(millis()/my.period)) % my.canvas_size;
+			image(img_fore,my.x,-200);
+			image(img_fore,my.x - my.canvas_size,-200);
+			if(my.angle) {
+				image(img_fore,my.x - my.canvas_size*2,-200);
+				image(img_fore,my.x + my.canvas_size,-200);
+				}
 			}
-
-		// push();
-		// fill("red");
-		// ellipse(my.canvas_size/2,my.canvas_size/2,10,10);
-		// fill(0,0);
-		// stroke("red"); ellipse(0,0,my.canvas_size,my.canvas_size);
-		// pop();
+		else{
+			background(128);
+			line(my.canvas_size/2,0,my.canvas_size/2,my.canvas_size);
+		}
 	}
 
 	function htmlSet(name,s) {
