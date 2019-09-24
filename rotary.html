@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html> 
+	<head> 
+		<script src="../p5/p5.js"></script>
+		<script src="../p5/addons/p5.dom.js"></script>		
+		<script src="../p5/addons/p5.sound.js"></script>
+		<META name="author" content="Arseny Khakhalin">
+		<META name="contact" content="khakhalin@gmail.com">
+		<meta name="description" content="A draft for studying OMR with tadpoles that are schooling in a bowl">
+	</head>
+	<body>
+	<div id="left" style="float:left; width:300px">
+		<p><b>Wheel properties:</b></p>
+		<p>Number of stripes:<br/>
+		<input type="text" id="my_n" value="6"/></p>
+		<p>Time per segment, ms:<br/>
+		<input type="text" id="my_speed" value = "1000"/></p>
+		<p>Direction right? 
+		<input type="checkbox" id="my_right" checked/></p>
+		<p>Period (for the entire sequence):<br/>
+		<input type="text" id="my_period" value = "5000"/></p>
+		<p><b>Grid properties:</b></p>
+		<p>Number of grid rows:<br/>
+		<input type="text" id="my_gridDim" value = "10"/></p>
+		<p>Number of flashes:<br/>
+		<input type="text" id="my_gridN" value = "5"/></p>
+		<p>Delay between flashes, ms:<br/>
+		<input type="text" id="my_gridPeriod" value = "50"/></p>
+		<p>Cycle: <span id="console">0</span></p>
+	</div>
+	<div id="viz5" ><p>&nbsp;</p>
+	<script type="text/javascript">
+	
+	var my = {"period": 1000, 
+          "x": 0,
+          "y": 0,
+          "r": 0,
+          "csize": 600,
+          "angle": 0,
+		  "shift": 0,
+          "speed": 1000,
+          "n": 6,
+		  "counter": 0,
+		  "period": 2000,
+		  "size": 20,
+		  "status": 0,
+		  "start": 0,
+		  "color": 0,
+		  "gridPeriod": 50,
+		  "gridN": 10,
+		  "gridDim": 10
+          }
+	
+	function setup() {	  
+		myCanvas = createCanvas(my.csize, my.csize);
+		//myCanvas.position(300, 50);
+		stroke(1);
+		fill(0);
+		translate(my.csize/2,my.csize/2);
+	}
+
+	function draw() {
+		my.n = max(1,floor(document.getElementById('my_n').value));
+		if(isNaN(my.n)) my.n = 10;
+		my.speed = max(1,document.getElementById('my_speed').value);
+		if(isNaN(my.speed)) my.speed = 1000;
+		my.period = max(1,document.getElementById('my_period').value);
+		if(isNaN(my.period)) my.period = 2000;
+		my.gridN = max(1,document.getElementById('my_gridN').value);
+		if(isNaN(my.gridN)) my.gridN = 2;
+		my.gridDim = max(1,document.getElementById('my_gridDim').value);
+		if(isNaN(my.gridDim)) my.gridDim = 2;
+		my.gridPeriod = max(1,document.getElementById('my_gridPeriod').value);
+		if(isNaN(my.gridPeriod)) my.gridPeriod = 50;
+	
+		background(255,255,255);
+		fill(255);
+		ellipse(0,0,my.csize,my.csize);
+		fill(my.color);
+	  
+		my.angle = millis()/my.speed*PI/my.n;
+		if(!document.getElementById('my_right').checked)
+			my.angle = -my.angle;
+		for(i=0; i<my.n; i++) {
+			arc(0,0,my.csize,my.csize, my.angle+i*2*PI/my.n+my.shift , my.angle+i*2*PI/my.n+PI/my.n+my.shift , PIE);
+		}		
+		
+		if(floor(millis()/my.period)>my.counter) {
+			my.counter++;
+			document.getElementById('console').innerHTML = my.counter;
+			my.status = 1;
+			my.start = millis();
+			}
+		
+		if(my.status===1) {
+			//my.shift = my.shift+PI/my.n/2;
+			grid_instance = floor((millis()-my.start)/my.gridPeriod);
+			drawGrid(grid_instance);
+			if(grid_instance>=my.gridN)
+				my.status = 0;			
+			}
+	}
+	
+	function drawGrid(instance) {
+		push();
+		noStroke();
+		translate(-my.csize/2,-my.csize/2);
+		d = my.csize/my.gridDim;
+		for(ix=0; ix<my.gridDim; ix++) 
+			for(iy=0; iy<my.gridDim; iy++) {
+				fill(((instance + ix + iy) % 2)*255);
+				rect(ix*d,iy*d, d, d);
+				}
+		pop();
+	}
+	
+	function keyPressed() {
+	  if(key == "Z"){
+	    my.status = 1;
+	    my.start = millis();
+	  }
+	  if(keyCode === LEFT_ARROW) {
+	    my.angleSpeed = PI/180*2;
+	  }
+	  else if (keyCode === RIGHT_ARROW) {
+	    my.angleSpeed = -PI/180*2;
+	  }
+	}
+	
+	function keyReleased() {
+	  my.angleSpeed = 0;
+	}
+	
+    </script>       
+    </div>
+    
+	</body> 
+</html> 
