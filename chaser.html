@@ -18,7 +18,7 @@
 		<p>Dead time, s:<br/>
 		<input type="text" id="my_deadTime" value = "30"/></p>
 		<p>Dot Travel Time, ms:<br/>
-		<input type="text" id="my_travelTime" value = "250"/></p>
+		<input type="text" id="my_travelTime" value = "2500"/></p>
 		<p>Dot radius, px:<br/>
 		<input type="text" id="my_size" value = "10"/></p>
 		<p>Make sound? 
@@ -69,8 +69,7 @@
 		myCanvas.parent('viz5');
 		//myCanvas.position(300, 50);
 		stroke(1);
-		fill(0);
-		// osc.amp(0); osc2.amp(0); 
+		fill(0);		
 	}
 	
 	function startOscillators(){
@@ -89,6 +88,8 @@
 		my.travelTime = max(1,floor(document.getElementById('my_travelTime').value)); if(isNaN(my.travelTime)) my.travelTime = 1000;	
 		my.deadTime = max(1,floor(document.getElementById('my_deadTime').value)); if(isNaN(my.deadTime)) my.deadTime = 20;	
 		my.size = max(1,floor(document.getElementById('my_size').value)); if(isNaN(my.size)) my.size = 15;
+		my.isi = floor(document.getElementById('my_isi').value); if(isNaN(my.isi)) my.isi = 0;
+		my.backColor = min(255,max(0,floor(document.getElementById('my_backColor').value))); if(isNaN(my.size)) my.size = 15;
 		if(document.getElementById('my_sound').checked) {
 			if(my.flag_sound==0) { // If just turned on..
 				startOscillators(); // use this opportunity to attempt restarting faulty oscillators
@@ -98,8 +99,6 @@
 		else {
 			my.flag_sound = 0;
 			}
-		my.isi = floor(document.getElementById('my_isi').value); if(isNaN(my.isi)) my.isi = 0;
-		my.backColor = min(255,max(0,floor(document.getElementById('my_backColor').value))); if(isNaN(my.size)) my.size = 15;
 
 		document.getElementById("body").style="background-color:rgb("+my.backColor+","+my.backColor+","+my.backColor+")";
 		

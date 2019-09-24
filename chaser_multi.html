@@ -76,12 +76,20 @@
 		//myCanvas.position(300, 50);
 		stroke(1);
 		fill(0);		
-		
-		osc = new p5.Oscillator(); 	osc.setType('sawtooth');  
-		osc.freq(my.freq);  osc.amp(0); osc.pan(1); osc.phase(0.25); osc.start();  
-		osc2 = new p5.Oscillator(); osc2.setType('sawtooth'); 
-		osc2.freq(my.freq); osc2.amp(0); osc2.pan(-1); osc2.phase(0.75); osc2.start(); 
+		startOscillators();
 	}
+	
+	
+	function startOscillators(){
+		if (typeof osc !== 'undefined') {
+			delete osc;
+			delete osc2;
+			}
+		osc = new p5.SawOsc(); osc.freq(my.freq); osc.pan(1); osc.phase(0.25); osc.amp(0);
+		osc2 = new p5.SawOsc(); osc2.freq(my.freq); osc2.pan(-1); osc2.phase(0.75); osc2.amp(0);
+		osc.start();
+		osc2.start(); 
+		}
 
 	
 	function draw() {
@@ -89,12 +97,20 @@
 		my.travelTime = max(1,floor(document.getElementById('my_travelTime').value)); if(isNaN(my.travelTime)) my.travelTime = 1000;	
 		my.deadTime = max(1,floor(document.getElementById('my_deadTime').value)); if(isNaN(my.deadTime)) my.deadTime = 20;	
 		my.size = max(1,floor(document.getElementById('my_size').value)); if(isNaN(my.size)) my.size = 15;
-		if(document.getElementById('my_sound').checked) {my.flag_sound = 1;} else {my.flag_sound = 0;}
 		if(document.getElementById('my_alternate').checked) {my.flag_alternate = 1;} else {my.flag_alternate = 0;}
 		my.isi = floor(document.getElementById('my_isi').value); if(isNaN(my.isi)) my.isi = 0;
 		my.sndVol = max(0,min(1,document.getElementById('my_sndVol').value)); if(isNaN(my.sndVol)) my.sndVol = 0.5;
 		my.freq = max(1,document.getElementById('my_freq').value); if(isNaN(my.freq)) my.freq = 100;
 		my.backColor = min(255,max(0,floor(document.getElementById('my_backColor').value))); if(isNaN(my.backColor)) my.backColor = 255;
+		if(document.getElementById('my_sound').checked) {
+			if(my.flag_sound==0) { // If just turned on..
+				startOscillators(); // use this opportunity to attempt restarting faulty oscillators
+				}
+			my.flag_sound = 1;
+			} 
+		else {
+			my.flag_sound = 0;
+			}
 
 		background(my.backColor);
 		translate(my.csize/2,my.csize/2);
