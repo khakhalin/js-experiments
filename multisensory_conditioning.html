@@ -14,13 +14,13 @@
 		<p>Background color (0 to 255):		<input type="text" id="my_background" value = "120" size=3 style="float:right; margin-right:5px"/></p>
 		<p>Number of grid rows:				<input type="text" id="my_gridDim" value = "24" size=3 style="float:right; margin-right:5px"/></p>
 		<p>Number of events:				<input type="text" id="my_gridN" value = "1" size=3 style="float:right; margin-right:5px"/></p>
-		<p>Event length(S), ms:				<input type="text" id="my_gridPeriod" value = "500" size=3 style="float:right; margin-right:5px"/></p>
+		<p>Event length(S), ms:				<input type="text" id="my_gridPeriod" value = "2000" size=3 style="float:right; margin-right:5px"/></p>
 		<p>Contrast, %: 					<input type="text" id="my_contrast" value = "30" size=3 style="float:right; margin-right:5px"/></p>
 		<input type="radio" name="stimMode" value="F"> Flash<br/>
 		<input type="radio" name="stimMode" value="R"> Ramp<br/>
-		<input type="radio" name="stimMode" value="C" checked> Corner<br/>
+		<input type="radio" name="stimMode" value="C"> Corner<br/>
 		<input type="radio" name="stimMode" value="AC"> Anti-Corner<br/>
-		<input type="radio" name="stimMode" value="D" > Dense<br/>
+		<input type="radio" name="stimMode" value="D" checked> Dense<br/>
 		<input type="radio" name="stimMode" value="T" > Trippy<br/>
 		<input type="radio" name="stimMode" value="S"> Swirl<br/>
 		<input type="radio" name="stimMode" value="MS"> Monoswirl
@@ -30,7 +30,7 @@
 		<p>Volume, %:
 		<input type="text" id="my_volume" value = "20" size=3 style="float:right; margin-right:5px"/></p>
 		<p>Vis to Au ISI, ms:
-		<input type="text" id="my_isi" value = "100" size=3 style="float:right; margin-right:5px"/></p>
+		<input type="text" id="my_isi" value = "2000" size=3 style="float:right; margin-right:5px"/></p>
 		<p>Show countdown? <input type="checkbox" id="my_flagShowNumbers" checked/></p>
 		<p><button onclick="resetTrials()">Start anew</button></p>		
 		<div id="cycleNumber">Cycle: initialized</div>
@@ -44,7 +44,7 @@
 	Code by Arseny Khakhalin, Bard College
 	https://sites.google.com/site/khakhalin/
 	khakhalin@gmail.com
-	Version: Jan 11 2017
+	Version: Sep 2019
 	*/
 	
 	var my = {
@@ -77,6 +77,19 @@
 		oscTime: 0			// Relative time around when the sound should be started (0 is when it is to be started). Dynamic
 		}
 	
+	
+	function startOscillators(){
+		if (typeof osc !== 'undefined') {
+			delete osc;
+			delete osc2;
+			}
+		osc = new p5.SawOsc(); osc.freq(my.freq); osc.pan(1); osc.phase(0.25); osc.amp(0);
+		osc2 = new p5.SawOsc(); osc2.freq(my.freq); osc2.pan(-1); osc2.phase(0.75); osc2.amp(0);
+		osc.start();
+		osc2.start(); 
+		}
+	
+	
 	function setup() {	  
 		myCanvas = createCanvas(my.csize, my.csize);
 		myCanvas.parent('viz5');
@@ -88,11 +101,10 @@
 		env.setADSR(0, 0.01, 1, 0); 		 	// setADSR(attackTime, decayTime, susPercent, releaseTime);
 		env.setRange(1, 0); 						//etRange(attackLevel, releaseLevel);
 		
-		osc = new p5.Oscillator('sawtooth'); 	osc.amp(env); osc.start();  osc.freq(my.freq);  osc.pan(1); osc.phase(0.25); 
-		osc2 = new p5.Oscillator('sawtooth'); 	osc2.amp(env); osc2.start(); osc2.freq(my.freq); osc2.pan(-1); osc2.phase(0.75); 		
-
 		var temp = hilbert(6,'u');	
 		hil = dehil(temp,6);
+		
+		startOscillators();
 	}
 	
 
@@ -200,7 +212,9 @@
 				background(colorLite);
 				fill(colorDark);
 				break;
-			case "D":		
+			case "D":
+				background(my.background);
+				break;
 			case "S":			
 				if(instance % 2 === 0)  {
 					background(colorLite);
@@ -219,7 +233,7 @@
 		noStroke();
 		
 		//translate(-my.csize/2,-my.csize/2); 					// Now actual drawing
-		var d = my.csize/my.gridDim;
+		var d = my.csize/my.gridDim; 							// Size of one cell (kinda 'diameter')
 		for(var ix=0; ix<my.gridDim; ix++) {
 			for(var iy=0; iy<my.gridDim; iy++) {				
 				if((instance + ix + iy) % 2 === 1) { 			// For most modes drawing half of shapes is enough						
@@ -240,7 +254,7 @@
 							rect(ix*d,iy*d, d*t, d*t);
 							break;
 						case "D":
-							ellipse((ix+1/2)*d,(iy+1/2)*d, d*t, d*t);
+							ellipse((ix+1/2)*d,(iy+1/2)*d, d*0.05/(1-t+0.05), d*0.05/(1-t+0.05));
 							break;
 						case "T":
 							rect((ix-t/2+1/2)*d,(iy-t/2+1/2)*d, d*t, d*t);
@@ -262,7 +276,7 @@
 				else {											// In some modes the other half needs to be drawn as well
 					switch(my.stimMode){
 						case "D":
-							ellipse((ix+1/2)*d,(iy+1/2)*d, d*t, d*t);
+							ellipse((ix+1/2)*d,(iy+1/2)*d, d*0.05/(1-t+0.05), d*0.05/(1-t+0.05));
 							break;
 						case "T":
 							rect((ix-(1-t)/2+1/2)*d,(iy-(1-t)/2+1/2)*d, d*(1-t), d*(1-t));
@@ -294,7 +308,9 @@
 		my.counterSound = -1;
 		my.start = millis();
 		htmlSet("cycleNumber","Cycle: " + my.counter);
+		startOscillators();
 	}
+	
 	
 	function keyPressed() {
 	}
@@ -302,11 +318,13 @@
 	function keyReleased() {
 	}
 
+
 	function htmlSet(name,s) {
 		document.getElementById(name).innerHTML = s;
 	}
 	
-		function htmlAdd(name,s) {
+	
+	function htmlAdd(name,s) {
 		var theDiv = document.getElementById(name);
 		var content = document.createTextNode(s);
 		theDiv.appendChild(content);
