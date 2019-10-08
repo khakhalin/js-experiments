@@ -15,7 +15,7 @@
 		<p><b>Running mode:</b></p>
 		<ul>
 		<input type="radio" name="stimMode" value="N" checked> Silent<br/>
-		<input type="radio" name="stimMode" value="S" checked> Singles<br/>
+		<input type="radio" name="stimMode" value="S"> Singles<br/>
 		<input type="radio" name="stimMode" value="D"> PPI protocol<br/>		
 		</ul>
 		<p>To cycle, put more than one value, space-separated, in ONE of the windows below:</p>
@@ -23,7 +23,7 @@
 		<p>ISI, ms:							<input type="text" id="my_isi" value = "100" size=7 style="float:right; margin-right:5px"/></p>
 		<p>Prepulse, % of pulse				<input type="text" id="my_prepulse" value = "20" size=7 style="float:right; margin-right:5px"/></p>
 		<p>Show countdown? <input type="checkbox" id="my_flagShowNumbers" checked/></p>
-		<p><button onclick="resetTrials()">Start anew</button></p>		
+		<p><button onclick="resetTrials();">Start anew</button></p>		
 		<div id="cycleNumber">Cycle: initialized</div>		
 		<div id="timeToFlash"></div>
 		<div id="console"></div>
@@ -34,7 +34,7 @@
 	Code by Arseny Khakhalin, Bard College
 	https://sites.google.com/site/khakhalin/
 	khakhalin@gmail.com
-	Version: Jul 05 2016
+	Version: Oct 2019
 	*/
 	
 	var my = {
@@ -63,6 +63,19 @@
 		oscTime: 0			// Relative time around when the sound should be started (0 is when it is to be started). Dynamic
 		}
 	
+	
+	function startOscillators(){
+		if (typeof osc !== 'undefined') {
+			delete osc;
+			delete osc2;
+			}
+		osc = new p5.SawOsc(); osc.freq(my.freq); osc.pan(1); osc.phase(0.25); osc.amp(0);
+		osc2 = new p5.SawOsc(); osc2.freq(my.freq); osc2.pan(-1); osc2.phase(0.75); osc2.amp(0);
+		osc.start();
+		osc2.start(); 
+		}
+	
+	
 	function setup() {	  
 		myCanvas = createCanvas(my.csize, my.csize);
 		myCanvas.parent('viz5');
@@ -73,8 +86,14 @@
 		env.setADSR(0, 0.01, 1, 0); 		 	// setADSR(attackTime, decayTime, susPercent, releaseTime);
 		env.setRange(1, 0); 						//etRange(attackLevel, releaseLevel);
 		
-		osc = new p5.Oscillator('sawtooth'); 	osc.start();  osc.amp(env); osc.freq(my.freq);  osc.pan(1); osc.phase(0.25); 
-		osc2 = new p5.Oscillator('sawtooth'); 	osc2.start(); osc2.amp(env); osc2.freq(my.freq); osc2.pan(-1); osc2.phase(0.75); 		
+		startOscillators();
+	}
+	
+	
+	function resetTrials() {
+		my.counter = -1;
+		my.start = millis();
+		startOscillators();
 	}
 	
 
@@ -99,9 +118,15 @@
 		var radios = document.getElementsByName('stimMode');
 		for (var i = 0, length = radios.length; i < length; i++) {
 			if (radios[i].checked) {
-				my.stimMode = radios[i].value;
+				newStimMode = radios[i].value;
 				break;
 			}
+		}
+		if(newStimMode!==my.stimMode){
+			my.stimMode = newStimMode;
+			if(newStimMode!=="N"){ // If not nothing
+				startOscillators();
+			}			
 		}
 		my.legend = my.stimMode;
 		if(my.stimMode==="D") { 
