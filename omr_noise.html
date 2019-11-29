@@ -32,7 +32,8 @@
 			"x": 20,
 			"n": 4,
 			"width": 0,
-			"rotated": 0,
+			"right": 1,			// Directon of sweeping	
+			"rotated": 0,		// Straight or angled
 			"angle": 0,
 			"grain": 3,			// grain size
 			"secondsPassed": 0,	// total seconds passed since the beginning of the experiment (for reporting)
@@ -112,6 +113,24 @@
 
 	function htmlSet(name,s) {
 		document.getElementById(name).innerHTML = s;
+		}
+		
+	function keyPressed() {
+		if(keyCode == UP_ARROW){ // Ru Sweep
+			startSweep();
+			}
+		if(keyCode == DOWN_ARROW){
+			document.getElementById("always_run").checked = 0;
+			my.sweepStarted = my.sweepStarted-my.sweepLength*my.period; // Stop moving by faking death
+			}
+		if(keyCode == LEFT_ARROW) { // Set sweep direction
+			document.getElementById("my_right").checked = 0;
+			}
+		if(keyCode == RIGHT_ARROW) { // Set sweep direction
+			document.getElementById("my_right").checked = 1;
+			}
+		if(keyCode == ENTER){
+			}
 		}
 
     </script>
