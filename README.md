@@ -1,9 +1,7 @@
 Web scripts for teaching and research
 ==============
 
-This repo contains both successful programs and wild experiments. For a curated collection of stimulation tools for Xenopus tadpoles, see my repository [Xenopus Behavior](https://github.com/khakhalin/Xenopus-Behavior).
-
-All programs rely on the [p5.js library](https://p5js.org/); currently tested with version v0.9.0 (released July 01, 2019). To work properly, these scripts require the p5 library to be placed in a neighboring folder (in other words, script tags at the beginning of each file are pointing at src="../p5/p5.js").
+This repo contains both successful programs and wild experiments. For a more tightly curated collection of stimulation tools for Xenopus tadpoles, see my repository [Xenopus Behavior](https://github.com/khakhalin/Xenopus-Behavior).
 
 **List of programs:**
 
@@ -22,3 +20,11 @@ All programs rely on the [p5.js library](https://p5js.org/); currently tested wi
   * [Main version](http://faculty.bard.edu/~akhakhal/progs/multisensory_corner_cycle_isi.html) (code)
   * There are quite a few other versions here, with various experimental functionalities (all scripts that start with "multisensory_". Working links to these can be found [here](https://sites.google.com/view/khakhalin/research/programs))
   * [Multisensory conditioning protocol](http://faculty.bard.edu/~akhakhal/progs/multisensory_conditioning.html) (code)
+
+
+
+All these programs rely on the [p5.js library](https://p5js.org/) (currently tested with version v0.9.0, July 01 2019 release). If you want to run them locally, download the p5 library, and place it in a neighboring folder. That is, the script tags at the beginning of each of my programs are pointing at src="../p5/p5.js"), so if you get a folder with programs, and nearby a "p5" folder, everything should work.
+
+If you have any questions, or would like me to update any of these programs a bit, you can always send me an email! (khakhalin@gmail.com)
+
+A.
