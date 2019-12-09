@@ -60,7 +60,7 @@
 		my.alwaysRun = document.getElementById('always_run').checked;
 		my.right = document.getElementById('my_right').checked;
 		my.angle = document.getElementById('my_angle').checked;
-		my.sweepLength = max(1,document.getElementById('sweep_length').value); if(isNaN(my.sweepLength)) my.sweepLength = 1;
+		my.sweepLength = max(my.grain/my.canvas_size,document.getElementById('sweep_length').value); if(isNaN(my.sweepLength)) my.sweepLength = 1;
 
 		if(floor(millis()/1000) > my.secondsPassed) {
 			my.secondsPassed++;
