@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html> 
+	<head> 
+		<script src="../p5/p5.js"></script>
+		<script src="../p5/addons/p5.dom.js"></script>		
+		<script src="../p5/addons/p5.sound.js"></script>
+		<META name="author" content="Arseny Khakhalin">
+		<META name="contact" content="khakhalin@gmail.com">
+		<meta name="description" content="Hearing test">
+	</head>
+	<body>
+	<div id="left" style="font-size:10pt; font-family:Arial">
+		<p>Volume, %:						<input type="text" id="my_volume" value = "10" size=7 style="float:right; margin-right:5px"/></p>
+		<p><button onclick="resetTrials();">Start anew</button></p>	
+	</div>
+	<div id="reporter" style="font-size:10pt; font-family:Arial"></div>
+	<div id="console" style="font-size:10pt; font-family:Arial"></div>
+	<div id="viz5" >
+	<script type="text/javascript">
+	/*
+	Code by Arseny Khakhalin, Bard College
+	https://sites.google.com/site/khakhalin/
+	khakhalin@gmail.com
+	Version: Dec 2019
+	*/
+	
+	var my = {
+		/* Here "Dynamic" variables change all the time, "Parameters" are taken from the form, "Constants" are constants */
+		period: 2000, 		// sound period, ms. Constant
+		counter: 0,			// dynamic
+		tic: 0,				// tic, dynamic
+		volume: 0.1,		// Sound volume (for the pulse). Parameter
+		freq_start: 400		// Starting frequency. Constant, probably irrelevant
+		}
+	
+	
+	function startOscillators(){
+		if (typeof osc !== 'undefined') {
+			delete osc;
+			delete osc2;
+			}
+		osc  = new p5.SinOsc(); osc.freq(my.freq_start);  osc.pan(1); osc.phase(0.25); osc.amp(0);
+		osc2 = new p5.SinOsc(); osc2.freq(my.freq_start); osc2.pan(-1); osc2.phase(0.75); osc2.amp(0);
+		osc.start();
+		osc2.start(); 
+		background(0);
+		htmlSet("reporter","Oscillators started");
+		}
+	
+	
+	function setup() {	  
+		myCanvas = createCanvas(my.csize, my.csize);
+		myCanvas.parent('viz5');
+		stroke(1);
+		fill(0);
+		
+		env = new p5.Env();
+		env.setADSR(0.1, 0.1, 1, 0.1); 		 	// setADSR(attackTime, decayTime, susPercent, releaseTime);
+		env.setRange(1, 0); 					//etRange(attackLevel, releaseLevel);
+		
+		my.tic = millis()
+		startOscillators();
+		htmlSet("reporter","_");
+	}
+	
+	
+	function resetTrials() {
+		background(0);
+		my.counter = -1;
+		my.tic = millis();
+		startOscillators();
+	}
+	
+
+	function draw() {
+		//my.period = max(1,document.getElementById('my_period').value*1000); 				if(isNaN(my.period)) my.period = 20;
+		background(255);
+		fill(0);
+		
+		htmlSet("console","t: " + round(millis()-my.tic));
+			  
+		if(millis()-my.tic >= my.period) {					// Time to present the stimulus
+			my.counter++;										// Count this instance
+			my.tic = millis();								// Time when this period started
+			env.scale(0,my.volume);
+			env.play(osc);
+			env.play(osc2);			
+		}
+	}
+	
+	
+	function keyPressed() {
+	}
+	
+	function keyReleased() {
+	}
+
+	function htmlSet(name,s) {
+		document.getElementById(name).innerHTML = s;
+	}
+	
+	function htmlAdd(name,s) {
+		var theDiv = document.getElementById(name);
+		var content = document.createTextNode(s);
+		theDiv.appendChild(content);
+		theDiv.appendChild(document.createElement("br"));
+	}
+	
+    </script>       
+    </div>
+    
+	</body> 
+</html> 

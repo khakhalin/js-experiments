@@ -57,10 +57,7 @@
 		cycleN: 1,			// Cycle length (for correct PPI cycling). Parameter
 		
 		flagPreOK: 1,		// Whether giving a pre-pulse is currently OK (flags to 0 every period). Dynamic
-		legend: " ",		// Stimulus legend (for showing on screen). Dynamic
-		oscOn: 0,			// Whether the sound is on right now. Dynamic
-		soundLength: 10,	// Sound length in ms. Constant.
-		oscTime: 0			// Relative time around when the sound should be started (0 is when it is to be started). Dynamic
+		legend: " " 		// Stimulus legend (for showing on screen). Dynamic
 		}
 	
 	
@@ -69,7 +66,7 @@
 			delete osc;
 			delete osc2;
 			}
-		osc = new p5.SawOsc(); osc.freq(my.freq); osc.pan(1); osc.phase(0.25); osc.amp(0);
+		osc  = new p5.SawOsc(); osc.freq(my.freq);  osc.pan(1); osc.phase(0.25); osc.amp(0);
 		osc2 = new p5.SawOsc(); osc2.freq(my.freq); osc2.pan(-1); osc2.phase(0.75); osc2.amp(0);
 		osc.start();
 		osc2.start(); 
@@ -94,6 +91,8 @@
 		my.counter = -1;
 		my.start = millis();
 		startOscillators();
+		my.counter = 0;
+		htmlSet("cycleNumber","Cycle: " + my.counter);
 	}
 	
 
@@ -197,12 +196,6 @@
 	}
 	
 	
-	function resetTrials() {
-		my.counter = 0;
-		my.start = millis();
-		htmlSet("cycleNumber","Cycle: " + my.counter);
-	}
-	
 	function keyPressed() {
 	}
 	
@@ -213,7 +206,7 @@
 		document.getElementById(name).innerHTML = s;
 	}
 	
-		function htmlAdd(name,s) {
+	function htmlAdd(name,s) {
 		var theDiv = document.getElementById(name);
 		var content = document.createTextNode(s);
 		theDiv.appendChild(content);
